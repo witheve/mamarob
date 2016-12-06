@@ -24,6 +24,68 @@
     - Swiping left removes one from the user cart
   - Draw a user queue banner at the very top if an order is pending for them
 
+### Sample Menu
+```
+commit 
+   [#menu name:"Bacon Swiss Burger"
+    image:"https://pixabay.com/en/burger-food-meat-tasty-1428948/"
+    description:"A half pound burger made from Niman Ranch beef with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
+    cost:12]
+
+   [#menu name:"Veggie Burger"
+    image:"https://pixabay.com/en/eat-burger-onion-avocado-veggi-1352880/"
+    description:"Our totally vegan black bean and portabella mushroom burger, topped with avocado, grilled onion, vegan cheese, and soy mayo, all on a gluten-free bun"
+    cost:12
+    #gluten-free
+    #vegetarian]
+
+   [#menu name:"Chicken Salad Sandwich"
+    image:"https://pixabay.com/en/bread-breakfast-brown-business-1239276/"
+    description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread"
+    cost:10]
+
+   [#menu
+    name:"Charbroiled Chicken Wings"
+    image:"https://pixabay.com/en/barbecue-bbq-charcoal-chicken-88340/"
+    description:"Brined for 24 hours and coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy"
+    cost:10
+    #gluten-free
+    #spicy]
+
+
+   [#menu name:"French Fries"
+    image:"https://pixabay.com/en/french-fries-salt-food-923687/"
+    description:"Hand-cut Kennebec fries with Cajun seasoning"
+    cost:5
+    #gluten-free
+    #vegetarian]
+
+
+   [#menu
+    name:"Garlic Parmesan Mac & Cheese"
+    image:"https://pixabay.com/en/mac-and-cheese-pasta-food-cheese-521447/"
+    description:"Penne pasta smothered with aged cheddar, fresh garlic, and parsley"
+    cost:10
+    #vegetarian]
+
+
+   [#menu
+    name:"Gloria’s Beignets"
+    image:"https://pixabay.com/en/fritters-tradition-food-traditional-316488/"
+    description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey"
+    cost:6
+    #vegetarian]
+
+
+   [#menu
+    name:"Arnold Palmer"
+    image:"https://pixabay.com/en/beverages-cold-drink-fresh-ice-1866476/"
+    description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
+    cost:4
+    #gluten-free
+    #vegetarian]
+``` 
+
 ### Checkout Page
 - Draw the top banner
   - “Cart” in center
