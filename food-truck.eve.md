@@ -6,10 +6,12 @@
 - Draw the hero image
 - Draw the title text on top of the image
 - Draw the food truck description
+  we can add the additional imagery to the page if provided
 - Draw the Location box
   - Draw “Location today:” text
   - Draw the minimap
     - If no location is given, put a question mark
+      wouldn't it be better to just not draw?
     - If location is given, put a pin
       - Clicking the map opens up default map program
   - Draw the menu title
@@ -49,7 +51,8 @@ commit
    p.count := count
 ```
 
-display the current
+display the current order
+this currently lands at the bottom of the screen and should instead be the upper right
 ```
 search
    [#app page:"menu" order]
