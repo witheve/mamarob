@@ -26,7 +26,8 @@ start the app
   commit [#app page:"menu" order:[]]
 ```
 
-Draw the menu:
+Draw the menu
+should include title art
 ```
 search
    [#app page:"menu"]
@@ -38,7 +39,7 @@ commit @browser
    [#div #order text:"place order!" style:[border:"10px"]]
 ```
 
-add an item to the order after a click!
+add an item to the order after a click
 ```
 search @browser @event @session
    [#app page:"menu" order]
@@ -49,10 +50,32 @@ commit
    p.count := count
 ```
 
-display the current
+display the shopping cart with count
 ```
 search
-   [#app page:"menu" order]
+   [#app page:"order" order]
+   [#order-item order menu-item count]
+   item-count = sum[value: count per:order given:menu-item]
+commit
+   [#div #cart content:"url(assets/shopping-cart-icon-30.png)"]
+   t = [#div #total-items]
+   t.text = item-count
+```
+
+change the display to show the current order
+```
+search
+   a = [#app page:"menu" order]
+   [#click element:[cart]]
+commit
+   a.page := "order"
+```
+
+display the current order -
+this should be place on the upper right instead of landing at the bottom
+```
+search
+   [#app page:"order" order]
    [#order-item order menu-item count]
    total = sum[value: count * menu-item.cost per:order given:menu-item]
 bind @browser
