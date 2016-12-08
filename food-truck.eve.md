@@ -2,7 +2,16 @@
 
 ## User
 
+start the app for the user, landing on the menu page. here we create a new
+empty order record.
+```
+  commit [#app page:"homepage" order:[]]
+```
+
 ### Website Home Page
+
+Draw the menu
+should include title art
 - Draw the hero image
 - Draw the title text on top of the image
 - Draw the food truck description
@@ -15,48 +24,62 @@
     - If location is given, put a pin
       - Clicking the map opens up default map program
   - Draw the menu title
-    - Draw the shopping cart icon in corner
-      - Default is showing no number next to icon
-      - As items are added, count the items and display the count next to icon
-      - Clicking the icon takes you to the checkout page
-  - Draw menu items
-  - Draw photo
-  - Draw item name
 
-start the app
-```
-  commit [#app page:"menu" order:[]]
-```
-
-Draw the menu
-should include title art
+Draw the menu items with image, name, cost, addition button
 ```
 search
-   [#app page:"menu"]
-   m = [#menu name image cost]
+   [#app page:"homepage"]
+   menu-item = [#menu name image cost]
 bind @browser
-   [#div text:"{{name}} - ${{cost}}"]
-   [#div name style:[width:"auto" height:"auto" max-width:"200px" display:"block" content:"url({{image}})"]]
-   [#div menu-item:m text:"add to order!" style:[border:"2px solid black" width:80]]
-   [#div #order text:"place order!" style:[border:"10px"]]
+   [#div menu-item #container children:(
+      [#div text:"{{name}} - ${{cost}}"]
+      [#div name style:[width:"auto" height:"auto" max-width:"200px" display:"block" content:"url({{image}})"]]
+      [#div menu-item #add text:"add to order!" style:[border:"2px solid black" width:80]]
+     )]
 ```
 
-add an item to the order after a click
+Draw the remove-from-cart button for each menu item if this item is in the cart
+```
+search
+   [#app page:"homepage" order]
+   order-item = [#order-item order menu-item count]
+   not (count = 0)
+search @browser
+   d = [#div menu-item #container]
+bind @browser
+   d.children += [#div order-item #remove text:"remove from order" style:[border:"2px solid black" width:80]]
+```
+
+Add an item to the order after a click. in the original design this was a swipe right
 ```
 search @browser @event @session
-   [#app page:"menu" order]
-   [#click element:[menu-item]]
+   [#app page:"homepage" order]
+   [#click element:[#add menu-item]]
    count = if [#order-item order menu-item count:c] then c + 1 else 1
 commit
-   p = [#order-item order menu-item]
-   p.count := count
+   order-item = [#order-item order menu-item]
+   order-item.count := count
 ```
 
-display the shopping cart with count
+Handle the remove item from cart button
+in the original design this was swipe left, but we dont have swipe machinery yet
+```
+search @browser @event @session
+   [#app page:"homepage" order]
+   [#click element:[#remove order-item]]
+commit
+   order-item.count := order-item.count - 1
+```
+
+
+display the shopping cart with count on the menu page.
 this currently lands at the bottom of the screen and should instead be the upper right
+      - Default is showing no number next to icon [TODO - always draw the cart]
+      - As items are added, count the items and display the count next to icon
+      - Clicking the icon takes you to the checkout page
 ```
 search
-   [#app page:"menu" order]
+   [#app page:"homepage" order]
    [#order-item order menu-item count]
    item-count = sum[value: count per:order given:menu-item]
 bind @browser
@@ -65,99 +88,19 @@ bind @browser
    t.text := "{{item-count}}"
 ```
 
-change the display to show the current order
+navigate to the checkout page
 ```
 search @browser @event @session
-   a = [#app page:"menu" order]
+   a = [#app page:"homepage" order]
    [#click element:[#cart]]
 commit
-   a.page := "order"
+   a.page := "checkout"
 ```
 
-display the current order -
-this should be place on the upper right instead of landing at the bottom
-```
-search
-   [#app page:"order" order]
-   [#order-item order menu-item count]
-   total = sum[value: count * menu-item.cost per:order given:menu-item]
-bind @browser
-   [#div text:"{{menu-item.name}} {{count}} x {{menu-item.cost}} = {{count * menu-item.cost}}"]
-   [#div #order-button text:"place order!" style:[border:"2px solid black"]]
-   total-div = [#div order]
-   total-div.text := "total: {{total}}"
-```
-
-
-    - Swiping right adds one to the user cart
-    - Swiping left removes one from the user cart
-  - Draw a user queue banner at the very top if an order is pending for them
-
-
-
-### Sample Menu
-```
-commit
-   [#menu name:"Bacon Swiss Burger"
-    image:"assets/burger.jpg"
-    description:"A half pound burger made from Niman Ranch beef with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
-    cost:12]
-
-   [#menu name:"Veggie Burger"
-    image:"assets/veggieburger.jpg"
-    description:"Our totally vegan black bean and portabella mushroom burger, topped with avocado, grilled onion, vegan cheese, and soy mayo, all on a gluten-free bun"
-    cost:12
-    #gluten-free
-    #vegetarian]
-
-   [#menu name:"Chicken Salad Sandwich"
-    image:"assets/sandwich.jpg"
-    description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread"
-    cost:10]
-
-   [#menu
-    name:"Charbroiled Chicken Wings"
-    image:"assets/chickwings.jpg"
-    description:"Brined for 24 hours and coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy"
-    cost:10
-    #gluten-free
-    #spicy]
-
-
-   [#menu name:"French Fries"
-    image:"assets/french-fries.jpg"
-    description:"Hand-cut Kennebec fries with Cajun seasoning"
-    cost:5
-    #gluten-free
-    #vegetarian]
-
-
-   [#menu
-    name:"Garlic Parmesan Mac & Cheese"
-    image:"assets/mac-n-cheese.jpg"
-    description:"Penne pasta smothered with aged cheddar, fresh garlic, and parsley"
-    cost:10
-    #vegetarian]
-
-
-   [#menu
-    name:"Gloria’s Beignets"
-    image:"assets/fritters.jpg"
-    description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey"
-    cost:6
-    #vegetarian]
-
-
-   [#menu
-    name:"Arnold Palmer"
-    image:"assets/drink.jpg"
-    description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
-    cost:4
-    #gluten-free
-    #vegetarian]
-```
 
 ### Checkout Page
+
+
 - Draw the top banner
   - “Cart” in center
   - Back button in left
@@ -166,6 +109,33 @@ commit
   - Clicking item brings up item detail overlay
 - Draw pay button
   - Clicking pay button takes you to the Stripe payment page/overlay
+
+display the current order
+  - Draw a user queue banner at the very top if an order is pending for them
+```
+search
+   [#app page:"checkout" order]
+   [#order-item order menu-item count]
+   not (count = 0)
+   total = sum[value: count * menu-item.cost per:order given:menu-item]
+bind @browser
+   [#div text:"{{menu-item.name}} {{count}} x {{menu-item.cost}} = {{count * menu-item.cost}}"]
+   [#div #order-button text:"place order!" style:[border:"2px solid black"]]
+   [#div #from-checkout-to-home text:"back to menu!" style:[border:"2px solid black"]]
+   total-div = [#div order]
+   total-div.text := "total: {{total}}"
+```
+
+
+move from the order page to the menu page
+```
+search @browser @event @session
+   a = [#app page:"checkout" order]
+   [#click element:[#from-checkout-to-home]]
+commit
+   a.page := "homepage"
+```
+
 
 ### Checkout Item Detail
 - Draw the item photo
@@ -357,3 +327,66 @@ commit
   - When in the queue to be made, order should be gray, icon should be pending icon
   - When order is complete, order should be lit up, icon should be finished icon
   - When order has been served, order should be removed from the queue
+
+
+### Sample Menu Data
+```
+commit
+   [#menu name:"Bacon Swiss Burger"
+    image:"assets/burger.jpg"
+    description:"A half pound burger made from Niman Ranch beef with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
+    cost:12]
+
+   [#menu name:"Veggie Burger"
+    image:"assets/veggieburger.jpg"
+    description:"Our totally vegan black bean and portabella mushroom burger, topped with avocado, grilled onion, vegan cheese, and soy mayo, all on a gluten-free bun"
+    cost:12
+    #gluten-free
+    #vegetarian]
+
+   [#menu name:"Chicken Salad Sandwich"
+    image:"assets/sandwich.jpg"
+    description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread"
+    cost:10]
+
+   [#menu
+    name:"Charbroiled Chicken Wings"
+    image:"assets/chickwings.jpg"
+    description:"Brined for 24 hours and coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy"
+    cost:10
+    #gluten-free
+    #spicy]
+
+
+   [#menu name:"French Fries"
+    image:"assets/french-fries.jpg"
+    description:"Hand-cut Kennebec fries with Cajun seasoning"
+    cost:5
+    #gluten-free
+    #vegetarian]
+
+
+   [#menu
+    name:"Garlic Parmesan Mac & Cheese"
+    image:"assets/mac-n-cheese.jpg"
+    description:"Penne pasta smothered with aged cheddar, fresh garlic, and parsley"
+    cost:10
+    #vegetarian]
+
+
+   [#menu
+    name:"Gloria’s Beignets"
+    image:"assets/fritters.jpg"
+    description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey"
+    cost:6
+    #vegetarian]
+
+
+   [#menu
+    name:"Arnold Palmer"
+    image:"assets/drink.jpg"
+    description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
+    cost:4
+    #gluten-free
+    #vegetarian]
+```
