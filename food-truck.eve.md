@@ -6,10 +6,12 @@
 - Draw the hero image
 - Draw the title text on top of the image
 - Draw the food truck description
+  we can add the additional imagery to the page if provided
 - Draw the Location box
   - Draw “Location today:” text
   - Draw the minimap
     - If no location is given, put a question mark
+      wouldn't it be better to just not draw?
     - If location is given, put a pin
       - Clicking the map opens up default map program
   - Draw the menu title
@@ -51,22 +53,23 @@ commit
 ```
 
 display the shopping cart with count
+this currently lands at the bottom of the screen and should instead be the upper right
 ```
 search
-   [#app page:"order" order]
+   [#app page:"menu" order]
    [#order-item order menu-item count]
    item-count = sum[value: count per:order given:menu-item]
-commit
-   [#div #cart content:"url(assets/shopping-cart-icon-30.png)"]
+commit @browser
+   [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]
    t = [#div #total-items]
-   t.text = item-count
+   t.text := "{{item-count}}"
 ```
 
 change the display to show the current order
 ```
-search
+search @browser @event @session
    a = [#app page:"menu" order]
-   [#click element:[cart]]
+   [#click element:[#cart]]
 commit
    a.page := "order"
 ```
