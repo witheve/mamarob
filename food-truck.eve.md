@@ -18,35 +18,80 @@
       - As items are added, count the items and display the count next to icon
       - Clicking the icon takes you to the checkout page
   - Draw menu items
-    - Draw photo
-    - Draw item name
+  - Draw photo
+  - Draw item name
+
+start the app
+```
+  commit [#app page:"menu" order:[]]
+```
+
+Draw the menu:
+```
+search
+   [#app page:"menu"]
+   m = [#menu name image cost]
+commit @browser
+   [#div text:"{{name}} - ${{cost}}"]
+   [#div name style:[width:"auto" height:"auto" max-width:"200px" display:"block" content:"url({{image}})"]]
+   [#div menu-item:m text:"add to order!" style:[border:"2px solid black" width:80]]
+   [#div #order text:"place order!" style:[border:"10px"]]
+```
+
+add an item to the order after a click!
+```
+search @browser @event @session
+   [#app page:"menu" order]
+   [#click element:[menu-item]]
+   count = if [#order-item order menu-item count:c] then c + 1 else 1
+commit
+   p = [#order-item order menu-item]
+   p.count := count
+```
+
+display the current
+```
+search
+   [#app page:"menu" order]
+   [#order-item order menu-item count]
+   total = sum[value: count * menu-item.cost per:order given:menu-item]
+bind @browser
+   [#div text:"{{menu-item.name}} {{count}} x {{menu-item.cost}} = {{count * menu-item.cost}}"]
+   [#div #order-button text:"place order!" style:[border:"2px solid black"]]
+   total-div = [#div order]
+   total-div.text := "total: {{total}}"
+```
+
+
     - Swiping right adds one to the user cart
     - Swiping left removes one from the user cart
   - Draw a user queue banner at the very top if an order is pending for them
 
+
+
 ### Sample Menu
 ```
-commit 
+commit
    [#menu name:"Bacon Swiss Burger"
-    image:"https://pixabay.com/en/burger-food-meat-tasty-1428948/"
+    image:"assets/burger.jpg"
     description:"A half pound burger made from Niman Ranch beef with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
     cost:12]
 
    [#menu name:"Veggie Burger"
-    image:"https://pixabay.com/en/eat-burger-onion-avocado-veggi-1352880/"
+    image:"assets/veggieburger.jpg"
     description:"Our totally vegan black bean and portabella mushroom burger, topped with avocado, grilled onion, vegan cheese, and soy mayo, all on a gluten-free bun"
     cost:12
     #gluten-free
     #vegetarian]
 
    [#menu name:"Chicken Salad Sandwich"
-    image:"https://pixabay.com/en/bread-breakfast-brown-business-1239276/"
+    image:"assets/sandwich.jpg"
     description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread"
     cost:10]
 
    [#menu
     name:"Charbroiled Chicken Wings"
-    image:"https://pixabay.com/en/barbecue-bbq-charcoal-chicken-88340/"
+    image:"assets/chickwings.jpg"
     description:"Brined for 24 hours and coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy"
     cost:10
     #gluten-free
@@ -54,7 +99,7 @@ commit
 
 
    [#menu name:"French Fries"
-    image:"https://pixabay.com/en/french-fries-salt-food-923687/"
+    image:"assets/french-fries.jpg"
     description:"Hand-cut Kennebec fries with Cajun seasoning"
     cost:5
     #gluten-free
@@ -63,7 +108,7 @@ commit
 
    [#menu
     name:"Garlic Parmesan Mac & Cheese"
-    image:"https://pixabay.com/en/mac-and-cheese-pasta-food-cheese-521447/"
+    image:"assets/mac-n-cheese.jpg"
     description:"Penne pasta smothered with aged cheddar, fresh garlic, and parsley"
     cost:10
     #vegetarian]
@@ -71,7 +116,7 @@ commit
 
    [#menu
     name:"Gloria’s Beignets"
-    image:"https://pixabay.com/en/fritters-tradition-food-traditional-316488/"
+    image:"assets/fritters.jpg"
     description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey"
     cost:6
     #vegetarian]
@@ -79,12 +124,12 @@ commit
 
    [#menu
     name:"Arnold Palmer"
-    image:"https://pixabay.com/en/beverages-cold-drink-fresh-ice-1866476/"
+    image:"assets/drink.jpg"
     description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
     cost:4
     #gluten-free
     #vegetarian]
-``` 
+```
 
 ### Checkout Page
 - Draw the top banner
