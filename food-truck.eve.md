@@ -34,7 +34,7 @@ should include title art
 search
    [#app page:"menu"]
    m = [#menu name image cost]
-commit @browser
+bind @browser
    [#div text:"{{name}} - ${{cost}}"]
    [#div name style:[width:"auto" height:"auto" max-width:"200px" display:"block" content:"url({{image}})"]]
    [#div menu-item:m text:"add to order!" style:[border:"2px solid black" width:80]]
@@ -59,7 +59,7 @@ search
    [#app page:"menu" order]
    [#order-item order menu-item count]
    item-count = sum[value: count per:order given:menu-item]
-commit @browser
+bind @browser
    [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]
    t = [#div #total-items]
    t.text := "{{item-count}}"
