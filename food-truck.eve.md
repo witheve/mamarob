@@ -29,35 +29,45 @@ Draw the menu items with image, name, cost, addition button
 ```
 search
    [#app page:"homepage"]
-   menu-item = [#menu name image cost]
+   item = [#menu name image cost]
 bind @browser
-   [#div menu-item #container children:(
-      [#div text:"{{name}} - ${{cost}}"]
-      [#div name style:[width:"auto" height:"auto" max-width:"200px" display:"block" content:"url({{image}})"]]
-      [#div menu-item #add text:"add to order!" style:[border:"2px solid black" width:80]]
-     )]
+   [#div style:[display:"flex" flex:"0 0 auto" flex-direction:"row"]
+       children:
+       //menu
+       [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column" overflow-y: "auto", height: "100%"]
+          children:
+          [#div item #item-box
+                style:[display:"flex" height:"200px" flex:"0 0 auto" flex-direction:"row"]
+                      children:
+                      [#div text:"{{name}} ${{cost}}"]
+                      [#div name style:[max-width:"200px" background-size:"cover" display:"block" content:"url({{image}})"]]
+                      [#div #add-item item text:"add to order!" style:[border:"2px solid black" width:80]]]]
+       //checkout
+        [#div #checkout children:
+            [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]]]
 ```
 
 Draw the remove-from-cart button for each menu item if this item is in the cart
 ```
 search
    [#app page:"homepage" order]
-   order-item = [#order-item order menu-item count]
+   order-item = [#order-item order item count]
    not (count = 0)
 search @browser
-   d = [#div menu-item #container]
+   d = [#div item #item-box]
 bind @browser
-   d.children += [#div order-item #remove text:"remove from order" style:[border:"2px solid black" width:80]]
+   d.children += [#div #remove-item order-item  style:[border:"2px solid black" width:80] text:"remove from order! {{count}}" sort:6]
 ```
 
 Add an item to the order after a click. in the original design this was a swipe right
 ```
 search @browser @event @session
    [#app page:"homepage" order]
-   [#click element:[#add menu-item]]
-   count = if [#order-item order menu-item count:c] then c + 1 else 1
+   [#click element:[#item-box item]]
+   not([#click element:[#remove-item]])
+   count = if [#order-item order item count:c] then c + 1 else 1
 commit
-   order-item = [#order-item order menu-item]
+   order-item = [#order-item order item]
    order-item.count := count
 ```
 
@@ -66,25 +76,23 @@ in the original design this was swipe left, but we dont have swipe machinery yet
 ```
 search @browser @event @session
    [#app page:"homepage" order]
-   [#click element:[#remove order-item]]
+   [#click element:[#remove-item order-item]]
 commit
    order-item.count := order-item.count - 1
 ```
 
 
-display the shopping cart with count on the menu page.
-this currently lands at the bottom of the screen and should instead be the upper right
-      - Default is showing no number next to icon [TODO - always draw the cart]
-      - As items are added, count the items and display the count next to icon
-      - Clicking the icon takes you to the checkout page
+display the item count next to the shopping cart
 ```
 search
    [#app page:"homepage" order]
-   [#order-item order menu-item count]
-   item-count = sum[value: count per:order given:menu-item]
+   [#order-item order item count]
+   item-count = sum[value: count per:order given:item]
+search @browser
+    parent = [#div #checkout]
 bind @browser
-   [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]
    t = [#div #total-items]
+   parent.children += t
    t.text := "{{item-count}}"
 ```
 
@@ -102,7 +110,6 @@ commit
 
 
 - Draw the top banner
-  - “Cart” in center
   - Back button in left
 - Draw each menu item in cart
   - Swiping left removes item
@@ -110,20 +117,30 @@ commit
 - Draw pay button
   - Clicking pay button takes you to the Stripe payment page/overlay
 
+display the nav button, which is unconditional
+```
+search
+   [#app page:"checkout" order]
+commit @browser
+   [#div #from-checkout-to-home text:"back to menu!" style:[border:"2px solid black"]]
+```
+
+
 display the current order
   - Draw a user queue banner at the very top if an order is pending for them
 ```
 search
    [#app page:"checkout" order]
-   [#order-item order menu-item count]
+   [#order-item order item count]
    not (count = 0)
-   total = sum[value: count * menu-item.cost per:order given:menu-item]
+   total = sum[value: count * item.cost per:order given:item]
 bind @browser
-   [#div text:"{{menu-item.name}} {{count}} x {{menu-item.cost}} = {{count * menu-item.cost}}"]
-   [#div #order-button text:"place order!" style:[border:"2px solid black"]]
-   [#div #from-checkout-to-home text:"back to menu!" style:[border:"2px solid black"]]
-   total-div = [#div order]
-   total-div.text := "total: {{total}}"
+   [#div #checkout-container
+     style:[flex-direction:"column" display:"flex"]
+     children:
+       [#div text:"{{item.name}} {{count}} x {{item.cost}} = {{count * item.cost}}" sort:1]
+       [#div text:"total: {{total}}" sort:2]
+       [#div #order-button text:"place order!" style:[border:"2px solid black" sort:3]]]
 ```
 
 
