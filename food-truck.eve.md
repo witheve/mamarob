@@ -32,19 +32,19 @@ search
    item = [#menu name image cost]
 bind @browser
    [#div style:[display:"flex" flex:"0 0 auto" flex-direction:"row"]
-       children:
-       //menu
-       [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column" overflow-y: "auto", height: "100%"]
-          children:
-          [#div item #item-box
-                style:[display:"flex" height:"200px" flex:"0 0 auto" flex-direction:"row"]
-                      children:
-                      [#div text:"{{name}} ${{cost}}"]
-                      [#div name style:[max-width:"200px" background-size:"cover" display:"block" content:"url({{image}})"]]
-                      [#div #add-item item text:"add to order!" style:[border:"2px solid black" width:80]]]]
-       //checkout
-        [#div #checkout children:
-            [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]]]
+         children:
+         //menu
+         [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column" overflow-y: "auto", height: "100%"]
+               children:
+               [#div item #item-box
+                     style:[display:"flex" height:"200px" flex:"0 0 auto" flex-direction:"row"]
+                           children:
+                           [#div text:"{{name}} ${{cost}}"]
+                           [#div name style:[max-width:"200px" background-size:"cover" display:"block" content:"url({{image}})"]]
+                           [#div #add-item item text:"add to order!" style:[border:"2px solid black" width:80]]]]
+         //checkout
+         [#div #checkout children:
+               [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]]]
 ```
 
 Draw the remove-from-cart button for each menu item if this item is in the cart
@@ -52,7 +52,7 @@ Draw the remove-from-cart button for each menu item if this item is in the cart
 search
    [#app page:"homepage" order]
    order-item = [#order-item order item count]
-   not (count = 0)
+   count != 0
 search @browser
    d = [#div item #item-box]
 bind @browser
@@ -121,7 +121,7 @@ display the nav button, which is unconditional
 ```
 search
    [#app page:"checkout" order]
-commit @browser
+bind @browser
    [#div #from-checkout-to-home text:"back to menu!" style:[border:"2px solid black"]]
 ```
 
