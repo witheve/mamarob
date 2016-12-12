@@ -2,99 +2,156 @@
 
 ## User
 
+start the app for the user, landing on the menu page. here we create a new
+empty order record.
+```
+  commit [#app page:"homepage" order:[]]
+```
+
 ### Website Home Page
+
+Draw the menu
+should include title art
 - Draw the hero image
 - Draw the title text on top of the image
 - Draw the food truck description
+  we can add the additional imagery to the page if provided
 - Draw the Location box
 - Draw “Location today:” text
-- Draw the minimap
-- If no location is given, put a question mark
-- If location is given, put a pin
-- Clicking the map opens up default map program
+ - Draw the minimap
+    - If no location is given, put a question mark
+      wouldn't it be better to just not draw?
+    - If location is given, put a pin
+      - Clicking the map opens up default map program
 - Draw the menu title
-- Draw the shopping cart icon in corner
-- Default is showing no number next to icon
-- As items are added, count the items and display the count next to icon
-- Clicking the icon takes you to the checkout page
-- Draw menu items
-- Draw photo
-- Draw item name
-- Swiping right adds one to the user cart
-- Swiping left removes one from the user cart
-- Draw a user queue banner at the very top if an order is pending for them
 
-### Sample Menu
+Draw the menu items with image, name, cost, addition button
 ```
-commit 
-   [#menu name:"Bacon Swiss Burger"
-    image:"https://pixabay.com/en/burger-food-meat-tasty-1428948/"
-    description:"A half pound burger made from Niman Ranch beef with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
-    cost:12]
-
-   [#menu name:"Veggie Burger"
-    image:"https://pixabay.com/en/eat-burger-onion-avocado-veggi-1352880/"
-    description:"Our totally vegan black bean and portabella mushroom burger, topped with avocado, grilled onion, vegan cheese, and soy mayo, all on a gluten-free bun"
-    cost:12
-    #gluten-free
-    #vegetarian]
-
-   [#menu name:"Chicken Salad Sandwich"
-    image:"https://pixabay.com/en/bread-breakfast-brown-business-1239276/"
-    description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread"
-    cost:10]
-
-   [#menu
-    name:"Charbroiled Chicken Wings"
-    image:"https://pixabay.com/en/barbecue-bbq-charcoal-chicken-88340/"
-    description:"Brined for 24 hours and coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy"
-    cost:10
-    #gluten-free
-    #spicy]
-
-
-   [#menu name:"French Fries"
-    image:"https://pixabay.com/en/french-fries-salt-food-923687/"
-    description:"Hand-cut Kennebec fries with Cajun seasoning"
-    cost:5
-    #gluten-free
-    #vegetarian]
-
-
-   [#menu
-    name:"Garlic Parmesan Mac & Cheese"
-    image:"https://pixabay.com/en/mac-and-cheese-pasta-food-cheese-521447/"
-    description:"Penne pasta smothered with aged cheddar, fresh garlic, and parsley"
-    cost:10
-    #vegetarian]
-
-
-   [#menu
-    name:"Gloria’s Beignets"
-    image:"https://pixabay.com/en/fritters-tradition-food-traditional-316488/"
-    description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey"
-    cost:6
-    #vegetarian]
-
-
-   [#menu
-    name:"Arnold Palmer"
-    image:"https://pixabay.com/en/beverages-cold-drink-fresh-ice-1866476/"
-    description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
-    cost:4
-    #gluten-free
-    #vegetarian]
+search
+   [#app page:"homepage"]
+   item = [#menu name image cost]
+bind @browser
+   [#div style:[display:"flex" flex:"0 0 auto" flex-direction:"row"]
+         children:
+         //menu
+         [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column" overflow-y: "auto", height: "100%"]
+               children:
+               [#div item #item-box
+                     style:[display:"flex" height:"200px" flex:"0 0 auto" flex-direction:"row"]
+                           children:
+                           [#div text:"{{name}} ${{cost}}"]
+                           [#div name style:[max-width:"200px" background-size:"cover" display:"block" content:"url({{image}})"]]
+                           [#div #add-item item text:"add to order!" style:[border:"2px solid black" width:80]]]]
+         //checkout
+         [#div #checkout children:
+               [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]]]
 ```
+
+Draw the remove-from-cart button for each menu item if this item is in the cart
+```
+search
+   [#app page:"homepage" order]
+   order-item = [#order-item order item count]
+   count != 0
+search @browser
+   d = [#div item #item-box]
+bind @browser
+   d.children += [#div #remove-item order-item  style:[border:"2px solid black" width:80] text:"remove from order! {{count}}" sort:6]
+```
+
+Add an item to the order after a click. in the original design this was a swipe right
+```
+search @browser @event @session
+   [#app page:"homepage" order]
+   [#click element:[#item-box item]]
+   not([#click element:[#remove-item]])
+   count = if [#order-item order item count:c] then c + 1 else 1
+commit
+   order-item = [#order-item order item]
+   order-item.count := count
+```
+
+Handle the remove item from cart button
+in the original design this was swipe left, but we dont have swipe machinery yet
+```
+search @browser @event @session
+   [#app page:"homepage" order]
+   [#click element:[#remove-item order-item]]
+commit
+   order-item.count := order-item.count - 1
+```
+
+
+display the item count next to the shopping cart
+```
+search
+   [#app page:"homepage" order]
+   [#order-item order item count]
+   item-count = sum[value: count per:order given:item]
+search @browser
+    parent = [#div #checkout]
+bind @browser
+   t = [#div #total-items]
+   parent.children += t
+   t.text := "{{item-count}}"
+```
+
+navigate to the checkout page
+```
+search @browser @event @session
+   a = [#app page:"homepage" order]
+   [#click element:[#cart]]
+commit
+   a.page := "checkout"
+```
+
 
 ### Checkout Page
+
 - Draw the top banner
-- “Cart” in center
 - Back button in left
 - Draw each menu item in cart
 - Swiping left removes item
 - Clicking item brings up item detail overlay
 - Draw pay button
 - Clicking pay button takes you to the Stripe payment page/overlay
+
+display the nav button, which is unconditional
+```
+search
+   [#app page:"checkout" order]
+bind @browser
+   [#div #from-checkout-to-home text:"back to menu!" style:[border:"2px solid black"]]
+```
+
+
+display the current order
+  - Draw a user queue banner at the very top if an order is pending for them
+```
+search
+   [#app page:"checkout" order]
+   [#order-item order item count]
+   not (count = 0)
+   total = sum[value: count * item.cost per:order given:item]
+bind @browser
+   [#div #checkout-container
+     style:[flex-direction:"column" display:"flex"]
+     children:
+       [#div text:"{{item.name}} {{count}} x {{item.cost}} = {{count * item.cost}}" sort:1]
+       [#div text:"total: {{total}}" sort:2]
+       [#div #order-button text:"place order!" style:[border:"2px solid black" sort:3]]]
+```
+
+
+move from the order page to the menu page
+```
+search @browser @event @session
+   a = [#app page:"checkout" order]
+   [#click element:[#from-checkout-to-home]]
+commit
+   a.page := "homepage"
+```
+
 
 ### Checkout Item Detail
 - Draw the item photo
@@ -355,4 +412,66 @@ This block links the CSS that styles the order queue.
 ```
 commit @browser
 	[#link rel:"stylesheet" type:"text/css" href:"/assets/style.css"]
+```
+
+### Sample Menu Data
+```
+commit
+   [#menu name:"Bacon Swiss Burger"
+    image:"assets/burger.jpg"
+    description:"A half pound burger made from Niman Ranch beef with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
+    cost:12]
+
+   [#menu name:"Veggie Burger"
+    image:"assets/veggieburger.jpg"
+    description:"Our totally vegan black bean and portabella mushroom burger, topped with avocado, grilled onion, vegan cheese, and soy mayo, all on a gluten-free bun"
+    cost:12
+    #gluten-free
+    #vegetarian]
+
+   [#menu name:"Chicken Salad Sandwich"
+    image:"assets/sandwich.jpg"
+    description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread"
+    cost:10]
+
+   [#menu
+    name:"Charbroiled Chicken Wings"
+    image:"assets/chickwings.jpg"
+    description:"Brined for 24 hours and coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy"
+    cost:10
+    #gluten-free
+    #spicy]
+
+
+   [#menu name:"French Fries"
+    image:"assets/french-fries.jpg"
+    description:"Hand-cut Kennebec fries with Cajun seasoning"
+    cost:5
+    #gluten-free
+    #vegetarian]
+
+
+   [#menu
+    name:"Garlic Parmesan Mac & Cheese"
+    image:"assets/mac-n-cheese.jpg"
+    description:"Penne pasta smothered with aged cheddar, fresh garlic, and parsley"
+    cost:10
+    #vegetarian]
+
+
+   [#menu
+    name:"Gloria’s Beignets"
+    image:"assets/fritters.jpg"
+    description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey"
+    cost:6
+    #vegetarian]
+
+
+   [#menu
+    name:"Arnold Palmer"
+    image:"assets/drink.jpg"
+    description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
+    cost:4
+    #gluten-free
+    #vegetarian]
 ```
