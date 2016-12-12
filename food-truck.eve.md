@@ -278,14 +278,11 @@ commit
 ## The Pass
 
 ### Orders Pending Queue
-- Draw orders pending
-- Draw order number
-- Draw order summary
-- Draw completion icon
-- Swipe/click/double click to progress status
-- When in the queue to be made, order should be gray, icon should be pending icon
-- When order is complete, order should be lit up, icon should be finished icon
-- When order has been served, order should be removed from the queue
+The pending orders queue is a portion of the food truck app that is used onboard the food truck itself to help whoever is working the pass to see what orders are currently being made and which orders are completed and ready for pickup. This portion of the app resembles TodoMVC in a way, as it needs to show a list of pending orders (todos) which can be progressed along according to their states of completion.
+
+Orders are placed by the customer on their mobile device or by the cashier in the truck, but both end up in the @`orders` database, which assigns them the #`order` tag and an order `number` attribute. The contents of the order itself are kept in the [body? Don’t know which attribute would be here], and are visible in the order queue to help keep track of the order, but are not adjustable here. Finally, each order has a `status` flag which affects how the order is displayed in the queue. When they enter the @`orders` database, their default value is `pending`, and can be progressed to `ready` once the order is prepared and finally to `complete` once the customer has picked up the order.
+
+This block draws orders in the browser that have an order number, items in the order, and a status that isn't `done`. It excludes orders that are `done` so that once an order is complete, it is simply no longer drawn on the screen. In the future if we want to add a fancier disappearing or completion animation, etc, this block might have to be changed but for now the simple solution suits our needs. There is also some included `if` logic that draws the right icon with each order and keeps them sorted such that orders ready for pickup are always at the top, and all remain sorted by order number.
 
 ```
 search
@@ -303,6 +300,8 @@ bind @browser
     	[#div text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]]
     [#div class:(icon "order-status")]]
 ```
+
+This block is some mocked up order data and will assuredly be replaced by the actual orders database once all the different parts of the app are integrated.
 
 ```
 search
@@ -340,6 +339,8 @@ commit
   
 ```
 
+This block progresses the `status` of an order when the order is double clicked.
+
 ```
 search @browser @event @session
 	clicks = [#double-click element:[#pending-order order]]
@@ -348,6 +349,8 @@ search @browser @event @session
 commit
 	order.status := newstatus
 ```
+
+This block links the CSS that styles the order queue.
 
 ```
 commit @browser
