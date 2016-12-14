@@ -15,94 +15,61 @@ should include title art
 - Draw the hero image
 - Draw the title text on top of the image
 - Draw the food truck description
-  we can add the additional imagery to the page if provided
+we can add the additional imagery to the page if provided
 - Draw the Location box
 - Draw “Location today:” text
- - Draw the minimap
+- Draw the minimap
     - If no location is given, put a question mark
       wouldn't it be better to just not draw?
     - If location is given, put a pin
       - Clicking the map opens up default map program
-- Draw the menu title
 
-Draw the menu items with image, name, cost, addition button
+Draw the homepage.
+
 ```
 search
    [#app page:"homepage"]
    item = [#menu name image cost]
+
 bind @browser
-   [#div style:[display:"flex" flex:"0 0 auto" flex-direction:"row"]
-         children:
-         //menu
-         [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column" overflow-y: "auto", height: "100%"]
-               children:
-               [#div item #item-box
-                     style:[display:"flex" height:"200px" flex:"0 0 auto" flex-direction:"row"]
-                           children:
-                           [#div text:"{{name}} ${{cost}}"]
-                           [#div name style:[max-width:"200px" background-size:"cover" display:"block" content:"url({{image}})"]]
-                           [#div #add-item item text:"add to order!" style:[border:"2px solid black" width:80]]]]
-         //checkout
-         [#div #checkout children:
-               [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]]]
+   [#div style: [display:"flex" flex:"0 0 auto" flex-direction:"column"]
+    children:
+      //checkout
+      [#div #checkout style: [display: "flex" flex: "0 0 auto" flex-direction: "row"] children:
+        [#div #cart style:[width:30 height: 30 content:"url(assets/shopping-cart-icon-30.png)"]]]
+      //menu
+      [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column" overflow-y: "auto", height: "100%"]
+       children:
+         [#menu-item #description #buyable item]]]
 ```
 
-Draw the remove-from-cart button for each menu item if this item is in the cart
+Display a quantity badge on the shopping cart.
+
 ```
 search
-   [#app page:"homepage" order]
-   order-item = [#order-item order item count]
-   count != 0
+  [#app page:"homepage" order]
+  [#order-item order item count]
+  item-count = sum[value: count per:order given:item]
+  item-count > 0
+
 search @browser
-   d = [#div item #item-box]
+  parent = [#div #checkout]
+
 bind @browser
-   d.children += [#div #remove-item order-item  style:[border:"2px solid black" width:80] text:"remove from order! {{count}}" sort:6]
+  t = [#div #total-items class: "qty-badge"]
+  parent.children += t
+  t.text := "{{item-count}}"
 ```
 
-Add an item to the order after a click. in the original design this was a swipe right
+Navigate to the checkout page.
+
 ```
 search @browser @event @session
-   [#app page:"homepage" order]
-   [#click element:[#item-box item]]
-   not([#click element:[#remove-item]])
-   count = if [#order-item order item count:c] then c + 1 else 1
+  a = [#app page:"homepage" order]
+  [#click element:[#cart]]
+
 commit
-   order-item = [#order-item order item]
-   order-item.count := count
-```
-
-Handle the remove item from cart button
-in the original design this was swipe left, but we dont have swipe machinery yet
-```
-search @browser @event @session
-   [#app page:"homepage" order]
-   [#click element:[#remove-item order-item]]
-commit
-   order-item.count := order-item.count - 1
-```
-
-
-display the item count next to the shopping cart
-```
-search
-   [#app page:"homepage" order]
-   [#order-item order item count]
-   item-count = sum[value: count per:order given:item]
-search @browser
-    parent = [#div #checkout]
-bind @browser
-   t = [#div #total-items]
-   parent.children += t
-   t.text := "{{item-count}}"
-```
-
-navigate to the checkout page
-```
-search @browser @event @session
-   a = [#app page:"homepage" order]
-   [#click element:[#cart]]
-commit
-   a.page := "checkout"
+  a.page := "checkout"
 ```
 
 
@@ -126,7 +93,7 @@ bind @browser
 
 
 display the current order
-  - Draw a user queue banner at the very top if an order is pending for them
+- Draw a user queue banner at the very top if an order is pending for them
 ```
 search
    [#app page:"checkout" order]
@@ -335,6 +302,7 @@ commit
 ## The Pass
 
 ### Orders Pending Queue
+
 The pending orders queue is a portion of the food truck app that is used onboard the food truck itself to help whoever is working the pass to see what orders are currently being made and which orders are completed and ready for pickup. This portion of the app resembles TodoMVC in a way, as it needs to show a list of pending orders (todos) which can be progressed along according to their states of completion.
 
 Orders are placed by the customer on their mobile device or by the cashier in the truck, but both end up in the @`orders` database, which assigns them the #`order` tag and an order `number` attribute. The contents of the order itself are kept in the [body? Don’t know which attribute would be here], and are visible in the order queue to help keep track of the order, but are not adjustable here. Finally, each order has a `status` flag which affects how the order is displayed in the queue. When they enter the @`orders` database, their default value is `pending`, and can be progressed to `ready` once the order is prepared and finally to `complete` once the customer has picked up the order.
@@ -346,15 +314,15 @@ search
   order = [#order number items status]
   status != "done"
   icon = if status = "ready" then "ion-android-checkmark-circle"
-  			 else if status = "pending" then "ion-android-time"
+             else if status = "pending" then "ion-android-time"
   order-style = if status = "pending" then "style-pending"
-  							else if status = "ready" then "style-ready"
+                            else if status = "ready" then "style-ready"
   index = sort[value: (status, number), direction: ("down", "up")]
 bind @browser
   [#div sort:index class:("pending-order" order-style) #pending-order order children:
-  	[#div class:"order-number" text:number]
+    [#div class:"order-number" text:number]
     [#div class:"order-items" children:
-    	[#div text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]]
+        [#div text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]]
     [#div class:(icon "order-status")]]
 ```
 
@@ -362,56 +330,56 @@ This block is some mocked up order data and will assuredly be replaced by the ac
 
 ```
 search
-	veggie = [#menu name:"Veggie Burger"]
+    veggie = [#menu name:"Veggie Burger"]
   arnold = [#menu name:"Arnold Palmer"]
   burger = [#menu name:"Bacon Swiss Burger"]
   fries = [#menu name:"French Fries"]
 commit
-	[#order number:10 status:"pending" items:
-  	[#order-item item:veggie]]
+    [#order number:10 status:"pending" items:
+    [#order-item item:veggie]]
   [#order number:11 status:"pending" items:
-  	[#order-item item:veggie]
+    [#order-item item:veggie]
     [#order-item item:fries]]
   [#order number:12 status:"pending" items:
-  	[#order-item item:veggie]
+    [#order-item item:veggie]
     [#order-item item:fries]
     [#order-item item:arnold]]
   [#order number:13 status:"pending" items:
-  	[#order-item item:burger]
+    [#order-item item:burger]
     [#order-item item:fries]]
   [#order number:14 status:"pending" items:
-  	[#order-item item:veggie]
+    [#order-item item:veggie]
     [#order-item item:arnold]
     [#order-item item:arnold]
-  	[#order-item item:burger]
+    [#order-item item:burger]
     [#order-item item:burger]
     [#order-item item:fries]]
   [#order number:15 status:"pending" items:
-  	[#order-item item:burger]
+    [#order-item item:burger]
     [#order-item item:fries]]
   [#order number:16 status:"pending" items:
-  	[#order-item item:burger]
+    [#order-item item:burger]
     [#order-item item:arnold]
     [#order-item item:fries]]
-  
+
 ```
 
 This block progresses the `status` of an order when the order is double clicked.
 
 ```
 search @browser @event @session
-	clicks = [#double-click element:[#pending-order order]]
+    clicks = [#double-click element:[#pending-order order]]
   newstatus = if order.status = "pending" then "ready"
-  						else if order.status = "ready" then "done"
+                        else if order.status = "ready" then "done"
 commit
-	order.status := newstatus
+    order.status := newstatus
 ```
 
 This block links the CSS that styles the order queue.
 
 ```
 commit @browser
-	[#link rel:"stylesheet" type:"text/css" href:"/assets/style.css"]
+    [#link rel:"stylesheet" type:"text/css" href:"/assets/style.css"]
 ```
 
 ### Sample Menu Data
@@ -474,4 +442,204 @@ commit
     cost:4
     #gluten-free
     #vegetarian]
+```
+
+
+# Components
+
+## Menu Item
+
+Menu items are present on most pages of the site. On each, they're roughly the same. Different styles and behaviors can be enabled by adding optional tags to the component.
+
+```
+search @browser
+  menu-item = [#menu-item item]
+  mode = if menu-item = [#description] then "description"
+         if menu-item = [#instructions] then "instructions"
+         if menu-item = [#buyable] then "buyable"
+         else "normal"
+
+search
+  item = [#menu name image cost]
+
+bind @browser
+  menu-item <- [#div class: "menu-item" children:
+    [#div class: "item-image" style: [background-image: "url({{image}})"]]
+    [#div #menu-item-text item class: "item-text" | mode children:
+      [#div class: "item-name" text: name]]
+    [#div class: "item-cost" text: cost]]
+```
+
+### Description
+Adds the items description beneath its name, if available.
+
+```
+  search @browser
+  item-text = [#menu-item-text item mode: "description"]
+
+search
+  description = item.description
+
+bind @browser
+  item-text.children += [#div sort: 2 class: "item-description" text: description]
+```
+
+### Instructions
+Adds a "special instructions" blurb.
+
+```
+search @browser
+  item-text = [#menu-item-text item mode: "instructions"]
+
+bind @browser
+  item-text.children += [#div sort: 2 class: "item-instructions" text: "special instructions?"]
+```
+
+
+### Buyable
+Adds event hooks to add/remove item from the current order.
+
+If the item is included in the current order, give it a badge indicating how many are being purchased.
+```
+search @browser
+  menu-item = [#menu-item #buyable item]
+
+search
+  [#app order]
+  [#order-item order item count]
+  count > 0
+
+bind @browser
+  menu-item.children += [#div class: "qty-badge" text: count]
+```
+
+Add an item to the current order.
+@TODO: Support touch gestures.
+```
+search @browser @event @session
+  [#app page:"homepage" order]
+  [#click element:[#menu-item #buyable item]]
+  not([#click element:[#remove-item-btn]])
+  count = if [#order-item order item count:c] then c + 1 else 1
+commit
+  order-item = [#order-item order item]
+  order-item.count := count
+```
+
+Remove an item from the current order.
+@TODO: Support touch gestures.
+```
+search @browser @event @session
+  [#app page:"homepage" order]
+  [#click element:[#remove-item-btn item]]
+  [#menu-item #buyable item]
+
+search
+  order-item = [#order-item order item count > 0]
+
+commit
+  order-item.count := order-item.count - 1
+```
+
+Draw the add to cart button.
+@TODO: Don't show this on devices supporting gestures.
+```
+search @browser
+  menu-item = [#menu-item #buyable item]
+
+bind @browser
+  menu-item.children += [#div #add-item-btn sort: 10 item class: "btn ion-plus-round" style: [margin-right: -10]]
+```
+
+Draw the remove from cart button.
+@TODO: Don't show this on devices supporting gestures.
+```
+search
+  [#app order]
+  count = if [#order-item order item count] then count
+          else 0
+
+search @browser
+  menu-item = [#menu-item #buyable item]
+
+bind @browser
+  menu-item.children += [#div #remove-item-btn sort: -1 item class: "btn ion-minus-round" class: [disabled: is(count = 0)] style: [margin-left: -10 margin-right: 10]]
+```
+
+### Styles
+Since the style differences for individual modes are so small, they've all been inlined.
+
+```css
+.menu-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+  padding: 10 20;
+  max-width: 500;
+  min-height: 80;
+  background: white;
+}
+
+.menu-item:hover { background: #F3F3F3; }
+.menu-item:active { background: #E9E9E9; }
+
+.menu-item .item-image {
+  align-self: stretch;
+  flex: 0 0 90px;
+  max-height: 90px;
+  margin: 0 -10;
+  margin-right: 10;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: middle center;
+  border-radius: 4px;
+}
+
+.menu-item .item-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.menu-item .item-name { color: #111; }
+
+.menu-item .item-instructions {
+  margin-bottom: -1.3em;
+  color: #999;
+  font-size: 0.8em;
+}
+
+.menu-item .item-description {
+  font-size: 10pt;
+}
+
+.menu-item .item-cost { margin-left: 10; }
+.menu-item .item-cost:before { content: "$"; }
+
+.menu-item .qty-badge {
+  position: absolute;
+  left: 42;
+  top: 10;
+  width: 24;
+  height: 24;
+  padding-top: 2;
+  z-index: 2;
+  border-bottom-right-radius: 8px;
+  border-top-left-radius: 4px;
+  background: rgba(255, 255, 255, 1);
+  text-align: center;
+}
+```
+
+## Button
+
+```css
+
+.btn { display: flex; padding: 10; flex: 0 0 auto; }
+.btn:hover { background: #F3F3F3; }
+.btn:active { background: #E9E9E9; }
+.btn.disabled { color: #999; }
 ```
