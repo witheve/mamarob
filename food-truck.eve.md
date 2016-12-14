@@ -33,18 +33,18 @@ search
    item = [#menu name image cost]
   
 bind @browser
-   [#div style: [display:"flex" flex:"0 0 auto" flex-direction:"row"]
+   [#div style: [display:"flex" flex:"0 0 auto" flex-direction:"column"]
     children:
       //checkout
-      [#div #checkout children:
-        [#div #cart style:[width:30 content:"url(assets/shopping-cart-icon-30.png)"]]]
+      [#div #checkout style: [display: "flex" flex: "0 0 auto" flex-direction: "row"] children:
+        [#div #cart style:[width:30 height: 30 content:"url(assets/shopping-cart-icon-30.png)"]]]
       //menu
       [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column" overflow-y: "auto", height: "100%"]
        children:
          [#menu-item #description #buyable item]]]
 ```
 
-Display an item count on the shopping cart.
+Display a quantity badge on the shopping cart.
 
 ```
 search
@@ -56,7 +56,7 @@ search @browser
   parent = [#div #checkout]
 
 bind @browser
-  t = [#div #total-items]
+  t = [#div #total-items class: "qty-badge"]
   parent.children += t
   t.text := "{{item-count}}"
 ```
@@ -430,6 +430,19 @@ bind @browser
 ### Buyable
 Adds event hooks to add/remove item from the current order.
 
+If the item is included in the current order, give it a badge indicating how many are being purchased.
+```
+search @browser
+  menu-item = [#menu-item #buyable item]
+  
+search
+  [#app order]
+  [#order-item order item count]
+  
+bind @browser
+  menu-item.children += [#div class: "qty-badge" text: count]
+```
+
 Add an item to the current order.
 @TODO: Support touch gestures.
 ```
@@ -535,6 +548,20 @@ Since the style differences for individual modes are so small, they've all been 
 
 .menu-item .item-cost { margin-left: 10; }
 .menu-item .item-cost:before { content: "$"; }
+
+.menu-item .qty-badge {
+  position: absolute;
+  left: 42;
+  top: 10;
+  width: 24;
+  height: 24;
+  padding-top: 2;
+  z-index: 2;
+  border-bottom-right-radius: 8px;
+  border-top-left-radius: 4px;
+  background: rgba(255, 255, 255, 1);
+  text-align: center;
+}
 ```
 
 ## Button
