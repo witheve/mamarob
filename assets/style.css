@@ -1,0 +1,51 @@
+.pending-order {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 6px;
+  box-shadow: 0px 0px 8px rgba(120,120,120,0.5) inset;
+  margin-bottom: 20px;
+  min-height: 75px;
+  user-select: none;
+}
+
+.order-number {
+  padding-left: 20px;
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.order-status {
+  font-size: 48px;
+  padding-right: 20px;
+}
+
+.order-items {
+  flex: auto;
+  padding: 10px 0px 10px 20px;
+  text-align: left;
+}
+
+.ion-android-time {
+}
+
+.ion-android-checkmark-circle {
+  color: green;
+}
+
+.style-pending {
+  background-color: #f4f4f4;
+  border-left: 1px solid #b4b4b4;
+  border-top: 1px solid #b4b4b4;
+  border-right: 1px solid #c8c8c8;
+  border-bottom: 1px solid #c8c8c8;
+  color: #b4b4b4;
+}
+
+.style-ready {
+  background-color: #ffffff;
+  border: 1px solid #f0f0f0;
+  color: #000000;
+}

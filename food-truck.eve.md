@@ -19,11 +19,10 @@ we can add the additional imagery to the page if provided
 - Draw the Location box
 - Draw “Location today:” text
 - Draw the minimap
-- If no location is given, put a question mark
-wouldn't it be better to just not draw?
-- If location is given, put a pin
-- Clicking the map opens up default map program
-- Draw the menu title
+    - If no location is given, put a question mark
+      wouldn't it be better to just not draw?
+    - If location is given, put a pin
+      - Clicking the map opens up default map program
 
 Draw the homepage.
 
@@ -31,7 +30,7 @@ Draw the homepage.
 search
    [#app page:"homepage"]
    item = [#menu name image cost]
-  
+
 bind @browser
    [#div style: [display:"flex" flex:"0 0 auto" flex-direction:"column"]
     children:
@@ -75,7 +74,6 @@ commit
 
 
 ### Checkout Page
-
 
 - Draw the top banner
 - Back button in left
@@ -304,15 +302,85 @@ commit
 ## The Pass
 
 ### Orders Pending Queue
-- Draw orders pending
-- Draw order number
-- Draw order summary
-- Draw completion icon
-- Swipe/click/double click to progress status
-- When in the queue to be made, order should be gray, icon should be pending icon
-- When order is complete, order should be lit up, icon should be finished icon
-- When order has been served, order should be removed from the queue
 
+The pending orders queue is a portion of the food truck app that is used onboard the food truck itself to help whoever is working the pass to see what orders are currently being made and which orders are completed and ready for pickup. This portion of the app resembles TodoMVC in a way, as it needs to show a list of pending orders (todos) which can be progressed along according to their states of completion.
+
+Orders are placed by the customer on their mobile device or by the cashier in the truck, but both end up in the @`orders` database, which assigns them the #`order` tag and an order `number` attribute. The contents of the order itself are kept in the [body? Don’t know which attribute would be here], and are visible in the order queue to help keep track of the order, but are not adjustable here. Finally, each order has a `status` flag which affects how the order is displayed in the queue. When they enter the @`orders` database, their default value is `pending`, and can be progressed to `ready` once the order is prepared and finally to `complete` once the customer has picked up the order.
+
+This block draws orders in the browser that have an order number, items in the order, and a status that isn't `done`. It excludes orders that are `done` so that once an order is complete, it is simply no longer drawn on the screen. In the future if we want to add a fancier disappearing or completion animation, etc, this block might have to be changed but for now the simple solution suits our needs. There is also some included `if` logic that draws the right icon with each order and keeps them sorted such that orders ready for pickup are always at the top, and all remain sorted by order number.
+
+```
+search
+  order = [#order number items status]
+  status != "done"
+  icon = if status = "ready" then "ion-android-checkmark-circle"
+             else if status = "pending" then "ion-android-time"
+  order-style = if status = "pending" then "style-pending"
+                            else if status = "ready" then "style-ready"
+  index = sort[value: (status, number), direction: ("down", "up")]
+bind @browser
+  [#div sort:index class:("pending-order" order-style) #pending-order order children:
+    [#div class:"order-number" text:number]
+    [#div class:"order-items" children:
+        [#div text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]]
+    [#div class:(icon "order-status")]]
+```
+
+This block is some mocked up order data and will assuredly be replaced by the actual orders database once all the different parts of the app are integrated.
+
+```
+search
+    veggie = [#menu name:"Veggie Burger"]
+  arnold = [#menu name:"Arnold Palmer"]
+  burger = [#menu name:"Bacon Swiss Burger"]
+  fries = [#menu name:"French Fries"]
+commit
+    [#order number:10 status:"pending" items:
+    [#order-item item:veggie]]
+  [#order number:11 status:"pending" items:
+    [#order-item item:veggie]
+    [#order-item item:fries]]
+  [#order number:12 status:"pending" items:
+    [#order-item item:veggie]
+    [#order-item item:fries]
+    [#order-item item:arnold]]
+  [#order number:13 status:"pending" items:
+    [#order-item item:burger]
+    [#order-item item:fries]]
+  [#order number:14 status:"pending" items:
+    [#order-item item:veggie]
+    [#order-item item:arnold]
+    [#order-item item:arnold]
+    [#order-item item:burger]
+    [#order-item item:burger]
+    [#order-item item:fries]]
+  [#order number:15 status:"pending" items:
+    [#order-item item:burger]
+    [#order-item item:fries]]
+  [#order number:16 status:"pending" items:
+    [#order-item item:burger]
+    [#order-item item:arnold]
+    [#order-item item:fries]]
+
+```
+
+This block progresses the `status` of an order when the order is double clicked.
+
+```
+search @browser @event @session
+    clicks = [#double-click element:[#pending-order order]]
+  newstatus = if order.status = "pending" then "ready"
+                        else if order.status = "ready" then "done"
+commit
+    order.status := newstatus
+```
+
+This block links the CSS that styles the order queue.
+
+```
+commit @browser
+    [#link rel:"stylesheet" type:"text/css" href:"/assets/style.css"]
+```
 
 ### Sample Menu Data
 ```
@@ -390,7 +458,7 @@ search @browser
          if menu-item = [#instructions] then "instructions"
          if menu-item = [#buyable] then "buyable"
          else "normal"
-  
+
 search
   item = [#menu name image cost]
 
@@ -408,12 +476,12 @@ Adds the items description beneath its name, if available.
 ```
   search @browser
   item-text = [#menu-item-text item mode: "description"]
-  
+
 search
   description = item.description
-  
+
 bind @browser
-  item-text.children += [#div sort: 2 class: "item-description" text: description] 
+  item-text.children += [#div sort: 2 class: "item-description" text: description]
 ```
 
 ### Instructions
@@ -422,9 +490,9 @@ Adds a "special instructions" blurb.
 ```
 search @browser
   item-text = [#menu-item-text item mode: "instructions"]
-  
+
 bind @browser
-  item-text.children += [#div sort: 2 class: "item-instructions" text: "special instructions?"] 
+  item-text.children += [#div sort: 2 class: "item-instructions" text: "special instructions?"]
 ```
 
 
@@ -435,12 +503,12 @@ If the item is included in the current order, give it a badge indicating how man
 ```
 search @browser
   menu-item = [#menu-item #buyable item]
-  
+
 search
   [#app order]
   [#order-item order item count]
   count > 0
-  
+
 bind @browser
   menu-item.children += [#div class: "qty-badge" text: count]
 ```
@@ -465,10 +533,10 @@ search @browser @event @session
   [#app page:"homepage" order]
   [#click element:[#remove-item-btn item]]
   [#menu-item #buyable item]
-  
+
 search
   order-item = [#order-item order item count > 0]
-  
+
 commit
   order-item.count := order-item.count - 1
 ```
@@ -478,9 +546,9 @@ Draw the add to cart button.
 ```
 search @browser
   menu-item = [#menu-item #buyable item]
-  
+
 bind @browser
-  menu-item.children += [#div #add-item-btn sort: 10 item class: "btn ion-plus-round" style: [margin-right: -10]] 
+  menu-item.children += [#div #add-item-btn sort: 10 item class: "btn ion-plus-round" style: [margin-right: -10]]
 ```
 
 Draw the remove from cart button.
@@ -490,10 +558,10 @@ search
   [#app order]
   count = if [#order-item order item count] then count
           else 0
-  
+
 search @browser
   menu-item = [#menu-item #buyable item]
-  
+
 bind @browser
   menu-item.children += [#div #remove-item-btn sort: -1 item class: "btn ion-minus-round" class: [disabled: is(count = 0)] style: [margin-left: -10 margin-right: 10]]
 ```
