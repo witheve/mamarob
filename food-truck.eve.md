@@ -289,7 +289,6 @@ commit
 - Swipe left to remove from the queue
 - Click to parse post details into the social media form and remove message from the queue
 - Replace any contents that may already be present with contents from queued post
-
 ### Truck Settings
 - Draw top banner
 
@@ -317,12 +316,13 @@ bind @browser
       [#button #edit-truck-name text: "edit"]
       [#button #home text: "home"]]
     [#div #page-body children:
-      [#image-container #hero-pic prompt: "Tap to change your cover photo"]
-      [#editable #description default: "Tap to add a description"]
+      [#image-container #hero-pic prompt: "Tap to set your cover photo"]
+      [#editable #truck-description default: "Tap to add a description"]
+      [#div text: "Integrations"]
       [#div #integrations children:
-        [#div text: "Twitter"]
-        [#div text: "Facebook"]
-        [#div text: "Instagram"]
+        [#span class: "ion-social-twitter-outline"]
+        [#span class: "ion-social-facebook-outline"]
+        [#span class: "ion-social-instagram-outline"]
       ]]]
 ```
 
@@ -336,7 +336,7 @@ search
   [#app #owner settings]
   
 commit
-  settings.name := value
+  settings.truck-name := value
 ```
 
 But editable into editing mode when the button is clicked
@@ -350,7 +350,7 @@ commit @browser
   truck-name-editable += #editing
 ```
 
-- Clicking the home button returns you to the home screen
+Clicking the home button returns you to the home screen
 
 ```
 search
@@ -363,10 +363,20 @@ commit
   app.page := "homepage"
 ```
 
-- Draw hero pic
-- Clicking lets you choose photo from URL, phone storage, or live photo
-- Draw description form
-- Draw integration buttons
+Save truck description to settings when it changes
+
+```
+search @browser
+  [#truck-description value]
+
+search
+  [#app #owner settings]
+  
+bind
+  settings.truck-description := value
+```
+
+
 - If all credentials are present, icon is lit up
 - Else, icon is grayed out
 - Clicking brings up credentials overlay
@@ -563,6 +573,9 @@ bind @browser
   image-container.children := [#div text: prompt-text]
 ```
 
-clicking on an image container opens a dialogue to change the image
+Clicking on an image container opens a dialogue to change the image. Image sources are from a URL, local storage, or captured from the camera (if available).
+@TODO - add local storage and camera upload options
+
+
 
 If the image container is assigned an image, display it
