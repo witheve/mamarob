@@ -51,6 +51,7 @@ search
   [#app page:"homepage" order]
   [#order-item order item count]
   item-count = sum[value: count per:order given:item]
+  item-count > 0
 
 search @browser
   parent = [#div #checkout]
@@ -438,6 +439,7 @@ search @browser
 search
   [#app order]
   [#order-item order item count]
+  count > 0
   
 bind @browser
   menu-item.children += [#div class: "qty-badge" text: count]
