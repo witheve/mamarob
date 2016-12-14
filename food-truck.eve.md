@@ -301,13 +301,24 @@ search
 
 bind @browser
   app.app := [#div]
+
 ```
 
-commit the initial app
+```
+commit
+  [#integration name: "twitter"]
+  [#integration name: "facebook"]
+  [#integration name: "instagram"]
+```
+
+Structure the page
 
 ```
 search @browser @session
   [#app #owner app page: "settings"]
+  integration = [#integration]
+  enabled? = if integration = [#enabled] then ""
+             else "-outline"
 
 bind @browser
   app.children := [#div children:
@@ -320,9 +331,7 @@ bind @browser
       [#editable #truck-description default: "Tap to add a description"]
       [#div text: "Integrations"]
       [#div #integrations children:
-        [#span class: "ion-social-twitter-outline"]
-        [#span class: "ion-social-facebook-outline"]
-        [#span class: "ion-social-instagram-outline"]
+  [#span #integration class: "ion-social-{{integration.name}}{{enabled?}}"]
       ]]]
 ```
 
@@ -565,7 +574,7 @@ An empty image container prompts the user to upload an image
 
 ```
 search @browser
-  image-container = [#image-container]
+  image-container = [#image-container not(image)]
   prompt-text = if image-container.prompt then image-container.prompt
                 else "Choose an image"
   
@@ -574,8 +583,49 @@ bind @browser
 ```
 
 Clicking on an image container opens a dialogue to change the image. Image sources are from a URL, local storage, or captured from the camera (if available).
+
+```
+search @browser
+  image-container = [#image-container]
+
+search @event
+  event = [#click element: image-container]
+  
+commit @browser
+  image-container += #editing
+
+```
+
+An #image-container in #editing mode displays options for uploading an image
 @TODO - add local storage and camera upload options
+```
+search @browser
+  image-container = [#image-container #editing]
+  
+bind @browser
+  image-container.children := [#input]
+```
 
+Enter a URL into the input box to display it
 
+```
+search @browser
+  image-container = [#image-container #editing children: [#input value]]
+  
+search @event
+  [#keydown element: image-container, key: "enter"]
+  
+commit @browser
+  image-container -= #editing
+  image-container.image := value
+```
 
 If the image container is assigned an image, display it
+
+```
+search @browser
+  image-container = [#image-container image]
+
+bind @browser
+  image-container.children := [#img src: image]
+```
