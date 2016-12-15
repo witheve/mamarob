@@ -19,14 +19,14 @@ we can add the additional imagery to the page if provided
 - Draw the Location box
 - Draw “Location today:” text
 - Draw the minimap
-    - If no location is given, put a question mark
-      wouldn't it be better to just not draw?
-    - If location is given, put a pin
-      - Clicking the map opens up default map program
+- If no location is given, put a question mark
+wouldn't it be better to just not draw?
+- If location is given, put a pin
+- Clicking the map opens up default map program
 
 Draw the homepage.
 
-```
+```eve disabled
 search
    [#app page:"homepage"]
    item = [#menu name image cost]
@@ -84,7 +84,7 @@ commit
 - Clicking pay button takes you to the Stripe payment page/overlay
 
 display the nav button, which is unconditional
-```
+```eve disabled
 search
    [#app page:"checkout" order]
 bind @browser
@@ -94,7 +94,7 @@ bind @browser
 
 display the current order
 - Draw a user queue banner at the very top if an order is pending for them
-```
+```eve
 search
    [#app page:"checkout" order]
    [#order-item order item count]
@@ -156,148 +156,104 @@ commit
 - Draw order recap
 - Draw back button to go back to home page
 
-### Push Notifications
-- If the user has an order pending that becomes ready, push a notification to alert them that their food is ready
+```
+search
+  order = [#order #my-order number items status]
+  (ahead, message, my-status) = if status:"ready" then ("Your order is ready!","","ready")
+    else if count[given: [#order status:"pending" number < order.number]] = 1 then ("1","order ahead of you!","ahead")
+    else if ahead = count[given: [#order status:"pending" number < order.number]] then (ahead,"orders ahead of you!","ahead")
+    else ("0","orders ahead of you!","ahead")
+bind @browser
+  [#div class:"my-order" children:
+    [#div class:"order-confirmed" text:"Order confirmed!"]
+    [#div class:my-status text:ahead]
+    [#div class:"msg" text:message]
+    [#div class:"my-order-number" text:"Order #{{number}}"]
+    [#div class:"my-food" text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]
+    [#div class:"spacer"]
+  [#div class:"back" text:"❮ Back to Mama Rob's"]]
+```
 
-## Owner
+```css
+.my-order {
+  border: 1px solid #000000;
+  border-radius: 6px;
+  flex: 0 0 600px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+  
+.order-confirmed {
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 14px;
+  text-align: left;
+  flex: 0 0 50px;
+  padding-left: 20px;
+  padding-top: 20px;
+}
 
-### Home Screen
-- Draw top banner
-- Draw truck name
-- Draw settings button
-- Clicking button takes you to truck settings page
-- Draw Social Media button
-- Clicking button takes you to Social Media page
-- Draw address search bar
-- Google Maps integration
-- Phone location integration
-- Draw Menu header
-- Draw Menu text
-- Draw left and arrows to show swipe direction
-- Draw “+” button to add item
-- Clicking brings up item listing overlay
-- Draw menu items
-- Draw picture
-- Draw item name
-- All items are on by default, and remember their last state
-- Swipe left to turn item off
-- Swipe right to turn item on
-- Clicking brings up item listing overlay
+.ahead {
+  flex: 1;
+  font-weight: bold;
+  font-size: 60px;
+  line-height: 60px;
+  text-align: center;
+  color: #b4b4b4;
+  flex: 0 0 100px;
+  padding-top: 40px;
+}
 
-### Item Listing
-- Draw item photo
-- Blank by default
-- Clicking lets you choose photo from phone storage or live photo
-- Draw item description text form
-- Blank by default
-- Draw item price text form
-- Blank by default
-- Draw item health icons
-- Vegetarian
-- Draw icon
-- Draw “V” text
-- Gluten-free
-- Draw icon
-- Draw “GF” text
-- Spicy
-- Draw icon
-- Draw “Spicy” text
-- All off by default
-- Clicking toggles on/off
-- Draw trash can icon
-- Clicking brings up an “Are you sure?” yes/no prompt
-- Clicking no reverts to item listing
-- Clicking yes permanently deletes the item listing and returns to the home screen
-- Draw accept button
-- If name and price forms both have information, commit contents of all 3 forms plus 3 health icons to item listing
-- If either name or price forms do not have information, pop up an error message saying “You’re missing a name/price!” with an OK button to revert to item listing
+.ready {
+  flex: 1;
+  font-weight: bold;
+  font-size: 36px;
+  line-height: 36px;
+  text-align: center;
+  color: green;
+  flex: 0 0 100px;
+  padding-top: 56px;
+}
 
-### Social Media
-- Draw top banner
-- Draw truck name
-- Draw back button
-- Clicking takes you back to the home screen
-- Draw message text form
-- Draw picture icon
-- Clicking lets you choose photo from phone storage or live photo
-- Draw social media icons
-- Facebook
-- Twitter
-- Instagram
-- All off by default
-- Clicking turns on that site for posting
-- If credentials are missing, bring up credential screen
-- Draw time box
-- Says “When?” if no choice has been entered yet
-- Clicking brings up time overlay
-- Draw “Now” toggle
-- Draw time and date selection
-- Draw date icon
-- Clicking opens a calendar
-- Clicking a date chooses that date and closes the calendar
-- Draw time selector
-- Scrolling up counts forward in time
-- Scrolling down counts backwards in time
-- Draw check box button
-- When clicked, apply time choice to post
-- If “Now” is toggled on, choose now and revert to social media screen
-- If “Now” is not toggled on, and both a date and a time have been selected, choose that time and revert to social media screen
-- If “Now” is not toggled on, and either a time or a date is missing, flash box red and do nothing
-- Draw “Post!” button
-- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
-- When clicked, if time selected is “Now”, commit the message to social media
-- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
-- Draw social media queue
-- Draw thumbnail photo if there’s a photo on the post
-- Draw preview text
-- Draw scheduled time to post
-- Swipe left to remove from the queue
-- Click to parse post details into the social media form and remove message from the queue
-- Replace any contents that may already be present with contents from queued post
+.msg {
+  flex: 1;
+  text-align: center;
+  flex: 0 0 40px;
+}
 
-### Truck Settings
-- Draw top banner
-- Draw name
-- Clicking brings up a text form filled with the current truck name
-- Draw back button
-- Clicking returns you to the home screen
-- Draw hero pic
-- Clicking lets you choose photo from URL, phone storage, or live photo
-- Draw description form
-- Draw integration buttons
-- If all credentials are present, icon is lit up
-- Else, icon is grayed out
-- Clicking brings up credentials overlay
-- Draw credential forms
-- Draw accept button
-- Clicking applies entered credentials and reverts to truck settings screen
+.my-order-number {
+  text-decoration: underline;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 14px;
+  text-align: left;
+  height: 50px;
+  padding-left: 20px;
+  padding-top: 20px;
+}
+.my-food {
+  padding-left: 20px;
+}
 
-## Cashier
+.spacer {
+  flex-grow: 10;
+}
 
-### Order Screen
-- Draw top banner
-- Draw truck name
-- Draw open/closed icon
-- Clicking brings up open/closed overlay
-- Clicking open sets truck status to open for business and reverts back to order screen
-- Clicking closed sets truck status to closed and reverts back to order screen
-- Draw menu items
-- Draw photo
-- Draw item name
-- Swiping right adds one to the cart
-- Swiping left removes one from the cart
-- Draw pay button
-- Clicking pay button takes you to the Stripe payment page/overlay
-
-### Stripe Page
-- Draw email field
-- Draw CC number field
-- Draw MM/YY field
-- Draw CVV field
-- Draw “Confirm Order!” button
-- Confirming order processes payment
-- If payment succeeds, add the order from user cart into pending orders, clear the cart, and return to order screen
-- If payment fails, display error and stay on Stripe page
+.back {
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 14px;
+  text-align: left;
+  flex: 0 0 50px;
+  padding-left: 20px;
+  padding-top: 20px;
+}
+```
 
 ## The Pass
 
@@ -309,7 +265,7 @@ Orders are placed by the customer on their mobile device or by the cashier in th
 
 This block draws orders in the browser that have an order number, items in the order, and a status that isn't `done`. It excludes orders that are `done` so that once an order is complete, it is simply no longer drawn on the screen. In the future if we want to add a fancier disappearing or completion animation, etc, this block might have to be changed but for now the simple solution suits our needs. There is also some included `if` logic that draws the right icon with each order and keeps them sorted such that orders ready for pickup are always at the top, and all remain sorted by order number.
 
-```
+```eve
 search
   order = [#order number items status]
   status != "done"
@@ -328,14 +284,14 @@ bind @browser
 
 This block is some mocked up order data and will assuredly be replaced by the actual orders database once all the different parts of the app are integrated.
 
-```
+```eve
 search
-    veggie = [#menu name:"Veggie Burger"]
+  veggie = [#menu name:"Veggie Burger"]
   arnold = [#menu name:"Arnold Palmer"]
   burger = [#menu name:"Bacon Swiss Burger"]
   fries = [#menu name:"French Fries"]
 commit
-    [#order number:10 status:"pending" items:
+  [#order number:10 status:"pending" items:
     [#order-item item:veggie]]
   [#order number:11 status:"pending" items:
     [#order-item item:veggie]
@@ -354,7 +310,7 @@ commit
     [#order-item item:burger]
     [#order-item item:burger]
     [#order-item item:fries]]
-  [#order number:15 status:"pending" items:
+  [#order #my-order number:15 status:"pending" items:
     [#order-item item:burger]
     [#order-item item:fries]]
   [#order number:16 status:"pending" items:
@@ -375,37 +331,30 @@ commit
     order.status := newstatus
 ```
 
-This block links the CSS that styles the order queue.
-
-```
-commit @browser
-    [#link rel:"stylesheet" type:"text/css" href:"/assets/style.css"]
-```
-
 ### Sample Menu Data
 ```
 commit
    [#menu name:"Bacon Swiss Burger"
     image:"assets/burger.jpg"
-    description:"A half pound burger made from Niman Ranch beef with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
+    description:"A half pound Niman Ranch burger with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
     cost:12]
 
    [#menu name:"Veggie Burger"
     image:"assets/veggieburger.jpg"
-    description:"Our totally vegan black bean and portabella mushroom burger, topped with avocado, grilled onion, vegan cheese, and soy mayo, all on a gluten-free bun"
+    description:"Our totally vegan black bean and portabella mushroom burger on a gluten-free bun."
     cost:12
     #gluten-free
     #vegetarian]
 
    [#menu name:"Chicken Salad Sandwich"
     image:"assets/sandwich.jpg"
-    description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread"
+    description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread."
     cost:10]
 
    [#menu
     name:"Charbroiled Chicken Wings"
     image:"assets/chickwings.jpg"
-    description:"Brined for 24 hours and coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy"
+    description:"Brined, coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy."
     cost:10
     #gluten-free
     #spicy]
@@ -413,7 +362,7 @@ commit
 
    [#menu name:"French Fries"
     image:"assets/french-fries.jpg"
-    description:"Hand-cut Kennebec fries with Cajun seasoning"
+    description:"Hand-cut Kennebec fries with Cajun seasoning."
     cost:5
     #gluten-free
     #vegetarian]
@@ -422,7 +371,7 @@ commit
    [#menu
     name:"Garlic Parmesan Mac & Cheese"
     image:"assets/mac-n-cheese.jpg"
-    description:"Penne pasta smothered with aged cheddar, fresh garlic, and parsley"
+    description:"Elbow pasta smothered with aged cheddar, fresh garlic, and parsley."
     cost:10
     #vegetarian]
 
@@ -430,7 +379,7 @@ commit
    [#menu
     name:"Gloria’s Beignets"
     image:"assets/fritters.jpg"
-    description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey"
+    description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey."
     cost:6
     #vegetarian]
 
@@ -568,6 +517,61 @@ bind @browser
 
 ### Styles
 Since the style differences for individual modes are so small, they've all been inlined.
+
+```css
+.pending-order {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 6px;
+  box-shadow: 0px 0px 8px rgba(120,120,120,0.5) inset;
+  margin-bottom: 20px;
+  min-height: 75px;
+  user-select: none;
+}
+
+.order-number {
+  padding-left: 20px;
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.order-status {
+  font-size: 48px;
+  padding-right: 20px;
+}
+
+.order-items {
+  flex: auto;
+  padding: 10px 0px 10px 20px;
+  text-align: left;
+}
+
+.ion-android-time {
+}
+
+.ion-android-checkmark-circle {
+  color: green;
+}
+
+.style-pending {
+  background-color: #f4f4f4;
+  border-left: 1px solid #b4b4b4;
+  border-top: 1px solid #b4b4b4;
+  border-right: 1px solid #c8c8c8;
+  border-bottom: 1px solid #c8c8c8;
+  color: #b4b4b4;
+}
+
+.style-ready {
+  background-color: #ffffff;
+  border: 1px solid #f0f0f0;
+  color: #000000;
+}
+```
+
 
 ```css
 .menu-item {
