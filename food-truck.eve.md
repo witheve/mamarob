@@ -26,7 +26,7 @@ wouldn't it be better to just not draw?
 
 Draw the homepage.
 
-```eve disabled
+```eve
 search
    [#app page:"homepage"]
    item = [#menu name image cost]
@@ -45,7 +45,7 @@ bind @browser
 
 Display a quantity badge on the shopping cart.
 
-```
+```eve
 search
   [#app page:"homepage" order]
   [#order-item order item count]
@@ -84,7 +84,7 @@ commit
 - Clicking pay button takes you to the Stripe payment page/overlay
 
 display the nav button, which is unconditional
-```eve disabled
+```eve
 search
    [#app page:"checkout" order]
 bind @browser
@@ -158,6 +158,7 @@ commit
 
 ```
 search
+  [#app page:"user-queue"]
   order = [#order #my-order number items status]
   (ahead, message, my-status) = if status:"ready" then ("Your order is ready!","","ready")
     else if count[given: [#order status:"pending" number < order.number]] = 1 then ("1","order ahead of you!","ahead")
@@ -171,7 +172,7 @@ bind @browser
     [#div class:"my-order-number" text:"Order #{{number}}"]
     [#div class:"my-food" text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]
     [#div class:"spacer"]
-  [#div class:"back" text:"❮ Back to Mama Rob's"]]
+  [#div class:"back-btn" text:"❮ Back to Mama Rob's"]]
 ```
 
 ```css
@@ -185,7 +186,7 @@ bind @browser
   justify-content: flex-start;
 }
   
-.order-confirmed {
+.my-order .order-confirmed {
   text-transform: uppercase;
   font-weight: bold;
   font-size: 14px;
@@ -196,7 +197,7 @@ bind @browser
   padding-top: 20px;
 }
 
-.ahead {
+.my-order .ahead {
   flex: 1;
   font-weight: bold;
   font-size: 60px;
@@ -207,7 +208,7 @@ bind @browser
   padding-top: 40px;
 }
 
-.ready {
+.my-order .ready {
   flex: 1;
   font-weight: bold;
   font-size: 36px;
@@ -218,13 +219,13 @@ bind @browser
   padding-top: 56px;
 }
 
-.msg {
+.my-order .msg {
   flex: 1;
   text-align: center;
   flex: 0 0 40px;
 }
 
-.my-order-number {
+.my-order .my-order-number {
   text-decoration: underline;
   text-transform: uppercase;
   font-weight: bold;
@@ -235,15 +236,16 @@ bind @browser
   padding-left: 20px;
   padding-top: 20px;
 }
-.my-food {
+
+.my-order .my-food {
   padding-left: 20px;
 }
 
-.spacer {
+.my-order .spacer {
   flex-grow: 10;
 }
 
-.back {
+.my-order .back-btn {
   text-transform: uppercase;
   font-weight: bold;
   font-size: 14px;
@@ -253,6 +255,7 @@ bind @browser
   padding-left: 20px;
   padding-top: 20px;
 }
+
 ```
 
 ## The Pass
@@ -267,6 +270,7 @@ This block draws orders in the browser that have an order number, items in the o
 
 ```eve
 search
+  [#app page:"order-queue"]
   order = [#order number items status]
   status != "done"
   icon = if status = "ready" then "ion-android-checkmark-circle"
@@ -324,9 +328,9 @@ This block progresses the `status` of an order when the order is double clicked.
 
 ```
 search @browser @event @session
-    clicks = [#double-click element:[#pending-order order]]
+  clicks = [#double-click element:[#pending-order order]]
   newstatus = if order.status = "pending" then "ready"
-                        else if order.status = "ready" then "done"
+              else if order.status = "ready" then "done"
 commit
     order.status := newstatus
 ```
@@ -395,6 +399,47 @@ commit
 
 
 # Components
+
+## Page view control
+```
+search
+  [#app page]
+bind @browser
+  [#div class:"nav-panel" children:
+    [#div #nav-btn page:"homepage" text:"Home"]
+    [#div #nav-btn page:"checkout" text: "Checkout"]
+    [#div #nav-btn page:"user-queue" text:"User Queue"]
+    [#div #nav-btn page:"order-queue" text:"Order Queue"]]
+```
+
+```
+search @browser @event @session
+  view = [#app]
+  click = [#click element:[#nav-btn page]]
+commit
+  view.page := page
+
+```
+
+```css
+.nav-panel {
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 30px;
+  order: -1;
+  margin-bottom: 10px;
+}
+
+.nav-panel > div {
+  font-size: 14px;
+  line-height: 30px;
+  border: 1px solid black;
+  border-radius: 6px;
+  margin-right: 10px;
+  padding: 0px 8px 0px;
+}
+
+```
 
 ## Menu Item
 
@@ -570,6 +615,7 @@ Since the style differences for individual modes are so small, they've all been 
   border: 1px solid #f0f0f0;
   color: #000000;
 }
+
 ```
 
 
