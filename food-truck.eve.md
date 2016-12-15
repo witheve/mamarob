@@ -306,9 +306,9 @@ bind @browser
 
 ```
 commit
-  [#integration name: "twitter"]
-  [#integration name: "facebook"]
-  [#integration name: "instagram"]
+  [#integration name: "twitter" credentials: []]
+  //[#integration name: "facebook" credentials: []]
+  //[#integration name: "instagram" credentials: []]
 ```
 
 Structure the page
@@ -325,13 +325,13 @@ bind @browser
   	[#div #page-header children:
   		[#editable #truck-name default: "Tap to name your truck"]
       [#button #edit-truck-name text: "edit"]
-      [#button #home text: "home"]]
+      [#button #to-home text: "home"]]
     [#div #page-body children:
       [#image-container #hero-pic prompt: "Tap to set your cover photo"]
       [#editable #truck-description default: "Tap to add a description"]
       [#div text: "Integrations"]
       [#div #integrations children:
-  [#span #integration class: "ion-social-{{integration.name}}{{enabled?}}"]
+  [#span #integration integration class: "ion-social-{{integration.name}}{{enabled?}}"]
       ]]]
 ```
 
@@ -366,7 +366,7 @@ search
   app = [#app]
   
 search @event @browser
-  [#click element: [#button #home]]
+  [#click element: [#button #to-home]]
   
 commit
   app.page := "homepage"
@@ -383,15 +383,106 @@ search
   
 bind
   settings.truck-description := value
+
 ```
 
+Clicking on an integration opens up a page to enter credentials.
 
-- If all credentials are present, icon is lit up
-- Else, icon is grayed out
-- Clicking brings up credentials overlay
-- Draw credential forms
-- Draw accept button
-- Clicking applies entered credentials and reverts to truck settings screen
+```
+search @event @browser @session
+  [#click element: [#integration integration]]
+  app = [#app]
+  
+commit
+  app.page := "integration setup"
+  app.integration := integration
+```
+
+Draw credential forms
+
+```
+search @browser @session
+  [#app app integration page: "integration setup"]
+  
+bind @browser
+  app.children := [#div children:
+    [#div class: "ion-social-{{integration.name}}"]
+    [#div text: "Sign in to {{integration.name}}"]
+    [#input #username placeholder: "Username"]
+    [#br]
+    [#input #password type: "password" placeholder: "Password"]
+    [#br]
+    [#button #submit-credentials text: "Submit"]
+    [#button #to-settings text: "Cancel"]
+  ]
+```
+
+Clicking submit applies the credentials to the integration
+
+```
+search @event @browser @session
+  [#click element: [#button #submit-credentials]]
+  [#password value: password]
+  [#username value: username]
+  [#app integration]
+
+commit
+  integration.credentials.username := username
+  integration.credentials.password := password
+```
+
+Clicking cancel goes back to the settings page
+
+```
+search
+  app = [#app]
+  
+search @event @browser
+  [#click element: [#button #to-settings]]
+  
+commit
+  app.page := "settings"
+```
+
+### Handle Twitter login
+Send credentials
+
+```
+search
+  integration = [#integration name: "twitter" credentials: [username password]]
+  
+commit
+  integration += #pending
+  
+commit @twitter
+  [#login username password]
+```
+
+Handle login response from twitter. For now, just throw back a success. The following block would be part of the Eve twitter integration
+
+```
+search @twitter
+  login = [#login username password]
+  
+commit @twitter
+  login += #success
+```
+
+Get the response from twitter, and modify our internal twitter record
+
+```
+search @twitter
+  [#login #success]
+  
+search
+  integration = [#integration #pending name: "twitter"]
+  app = [#app]
+  
+commit
+  integration -= #pending
+  integration += #enabled
+  app.page := "settings"
+```
 
 ## Cashier
 
