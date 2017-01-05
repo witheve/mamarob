@@ -709,7 +709,7 @@ bind @browser
     [#div #nav-btn page:"homepage" text:"Home"]
     [#div #nav-btn page:"checkout" text: "Checkout"]
     [#div #nav-btn page:"user-queue" text:"User Queue"]
-    [#div #nav-btn page:"order-queue" text:"Order Queue"]]
+    [#div #nav-btn page:"order-queue" text:"Order Queue"]
     [#div #nav-btn page:"settings" text:"Truck Settings"]]
 ```
 
