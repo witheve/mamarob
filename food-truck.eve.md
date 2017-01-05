@@ -258,6 +258,306 @@ bind @browser
 
 ```
 
+## Owner
+
+### Home Screen
+- Draw top banner
+- Draw truck name
+- Draw settings button
+- Clicking button takes you to truck settings page
+- Draw Social Media button
+- Clicking button takes you to Social Media page
+- Draw address search bar
+- Google Maps integration
+- Phone location integration
+- Draw Menu header
+- Draw Menu text
+- Draw left and arrows to show swipe direction
+- Draw “+” button to add item
+- Clicking brings up item listing overlay
+- Draw menu items
+- Draw picture
+- Draw item name
+- All items are on by default, and remember their last state
+- Swipe left to turn item off
+- Swipe right to turn item on
+- Clicking brings up item listing overlay
+
+### Item Listing
+- Draw item photo
+- Blank by default
+- Clicking lets you choose photo from phone storage or live photo
+- Draw item description text form
+- Blank by default
+- Draw item price text form
+- Blank by default
+- Draw item health icons
+- Vegetarian
+- Draw icon
+- Draw “V” text
+- Gluten-free
+- Draw icon
+- Draw “GF” text
+- Spicy
+- Draw icon
+- Draw “Spicy” text
+- All off by default
+- Clicking toggles on/off
+- Draw trash can icon
+- Clicking brings up an “Are you sure?” yes/no prompt
+- Clicking no reverts to item listing
+- Clicking yes permanently deletes the item listing and returns to the home screen
+- Draw accept button
+- If name and price forms both have information, commit contents of all 3 forms plus 3 health icons to item listing
+- If either name or price forms do not have information, pop up an error message saying “You’re missing a name/price!” with an OK button to revert to item listing
+
+### Social Media
+- Draw top banner
+- Draw truck name
+- Draw back button
+- Clicking takes you back to the home screen
+- Draw message text form
+- Draw picture icon
+- Clicking lets you choose photo from phone storage or live photo
+- Draw social media icons
+- Facebook
+- Twitter
+- Instagram
+- All off by default
+- Clicking turns on that site for posting
+- If credentials are missing, bring up credential screen
+- Draw time box
+- Says “When?” if no choice has been entered yet
+- Clicking brings up time overlay
+- Draw “Now” toggle
+- Draw time and date selection
+- Draw date icon
+- Clicking opens a calendar
+- Clicking a date chooses that date and closes the calendar
+- Draw time selector
+- Scrolling up counts forward in time
+- Scrolling down counts backwards in time
+- Draw check box button
+- When clicked, apply time choice to post
+- If “Now” is toggled on, choose now and revert to social media screen
+- If “Now” is not toggled on, and both a date and a time have been selected, choose that time and revert to social media screen
+- If “Now” is not toggled on, and either a time or a date is missing, flash box red and do nothing
+- Draw “Post!” button
+- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
+- When clicked, if time selected is “Now”, commit the message to social media
+- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
+- Draw social media queue
+- Draw thumbnail photo if there’s a photo on the post
+- Draw preview text
+- Draw scheduled time to post
+- Swipe left to remove from the queue
+- Click to parse post details into the social media form and remove message from the queue
+- Replace any contents that may already be present with contents from queued post
+
+### Truck Settings
+
+Structure the page
+
+```
+search @browser @session
+  [#app app page: "settings"]
+  integration = [#integration]
+  enabled? = if integration = [#enabled] then ""
+             else "-outline"
+
+bind @browser
+  app.children := [#div children:
+  	[#div #page-header children:
+  		[#editable #truck-name default: "Tap to name your truck"]
+      [#button #edit-truck-name text: "edit"]
+      [#button #to-home text: "home"]]
+    [#div #page-body children:
+      [#image-container #hero-pic prompt: "Tap to set your cover photo"]
+      [#editable #truck-description default: "Tap to add a description"]
+      [#div text: "Integrations"]
+      [#div #integrations children:
+  [#span #integration integration class: "ion-social-{{integration.name}}{{enabled?}}"]
+      ]]]
+```
+
+Save the name of the truck when the user sets it
+
+```
+search @browser
+  [#truck-name value]
+  
+search
+  [#app #owner settings]
+  
+commit
+  settings.truck-name := value
+```
+
+Put editable into editing mode when the button is clicked
+
+```
+search @event @browser
+  truck-name-editable = [#truck-name]
+  [#click element: [#button #edit-truck-name]]
+  
+commit @browser
+  truck-name-editable += #editing
+```
+
+Clicking the home button returns you to the home screen
+
+```
+search
+  app = [#app]
+  
+search @event @browser
+  [#click element: [#button #to-home]]
+  
+commit
+  app.page := "homepage"
+```
+
+Save truck description to settings when it changes
+
+```
+search @browser
+  [#truck-description value]
+
+search
+  [#app #owner settings]
+  
+bind
+  settings.truck-description := value
+
+```
+
+Clicking on an integration opens up a page to enter credentials.
+
+```
+search @event @browser @session
+  [#click element: [#integration integration]]
+  app = [#app]
+  
+commit
+  app.page := "integration setup"
+  app.integration := integration
+```
+
+Draw credential forms
+
+```
+search @browser @session
+  [#app app integration page: "integration setup"]
+  
+bind @browser
+  app.children := [#div children:
+    [#div class: "ion-social-{{integration.name}}"]
+    [#div text: "Sign in to {{integration.name}}"]
+    [#input #username placeholder: "Username"]
+    [#br]
+    [#input #password type: "password" placeholder: "Password"]
+    [#br]
+    [#button #submit-credentials text: "Submit"]
+    [#button #to-settings text: "Cancel"]
+  ]
+```
+
+Clicking submit applies the credentials to the integration
+
+```
+search @event @browser @session
+  [#click element: [#button #submit-credentials]]
+  [#password value: password]
+  [#username value: username]
+  [#app integration]
+
+commit
+  integration.credentials.username := username
+  integration.credentials.password := password
+```
+
+Clicking cancel goes back to the settings page
+
+```
+search
+  app = [#app]
+  
+search @event @browser
+  [#click element: [#button #to-settings]]
+  
+commit
+  app.page := "settings"
+```
+
+### Handle Twitter login
+
+Send credentials
+
+```
+search
+  integration = [#integration name: "twitter" credentials: [username password]]
+  
+commit
+  integration += #pending
+  
+commit @twitter
+  [#login username password]
+```
+
+Handle login response from twitter. For now, just throw back a success. The following block would be part of the Eve twitter integration
+
+```
+search @twitter
+  login = [#login username password]
+  
+commit @twitter
+  login += #success
+```
+
+Get the response from twitter, and modify our internal twitter record
+
+```
+search @twitter
+  [#login #success]
+  
+search
+  integration = [#integration #pending name: "twitter"]
+  app = [#app]
+  
+commit
+  integration -= #pending
+  integration += #enabled
+  app.page := "settings"
+```
+
+
+## Cashier
+
+### Order Screen
+- Draw top banner
+- Draw truck name
+- Draw open/closed icon
+- Clicking brings up open/closed overlay
+- Clicking open sets truck status to open for business and reverts back to order screen
+- Clicking closed sets truck status to closed and reverts back to order screen
+- Draw menu items
+- Draw photo
+- Draw item name
+- Swiping right adds one to the cart
+- Swiping left removes one from the cart
+- Draw pay button
+- Clicking pay button takes you to the Stripe payment page/overlay
+
+### Stripe Page
+- Draw email field
+- Draw CC number field
+- Draw MM/YY field
+- Draw CVV field
+- Draw “Confirm Order!” button
+- Confirming order processes payment
+- If payment succeeds, add the order from user cart into pending orders, clear the cart, and return to order screen
+- If payment fails, display error and stay on Stripe page
+
 ## The Pass
 
 ### Orders Pending Queue
@@ -336,6 +636,7 @@ commit
 ```
 
 ### Sample Menu Data
+
 ```
 commit
    [#menu name:"Bacon Swiss Burger"
@@ -397,7 +698,6 @@ commit
     #vegetarian]
 ```
 
-
 # Components
 
 ## Page view control
@@ -410,6 +710,7 @@ bind @browser
     [#div #nav-btn page:"checkout" text: "Checkout"]
     [#div #nav-btn page:"user-queue" text:"User Queue"]
     [#div #nav-btn page:"order-queue" text:"Order Queue"]]
+    [#div #nav-btn page:"settings" text:"Truck Settings"]]
 ```
 
 ```
@@ -560,6 +861,8 @@ bind @browser
   menu-item.children += [#div #remove-item-btn sort: -1 item class: "btn ion-minus-round" class: [disabled: is(count = 0)] style: [margin-left: -10 margin-right: 10]]
 ```
 
+
+
 ### Styles
 Since the style differences for individual modes are so small, they've all been inlined.
 
@@ -692,4 +995,136 @@ Since the style differences for individual modes are so small, they've all been 
 .btn:hover { background: #F3F3F3; }
 .btn:active { background: #E9E9E9; }
 .btn.disabled { color: #999; }
+```
+
+## Editable
+
+Every `#editable` is also a `#div`
+
+```
+search @browser
+  editable = [#editable]
+  
+bind @browser
+  editable += #div
+```
+
+If an editable has no text, display default text
+
+```
+search @browser
+  editable = [#editable not(#editing) default]
+  name = if editable.value = "" then default
+         else if editable.value then editable.value
+         else default
+           
+bind @browser
+  editable.children := [#div text: name]
+```
+
+Clicking on an editable puts it in the #editing state, which renders an input box instead of a raw div.
+
+```
+search @event @browser
+  [#click element]
+  element = [#editable]
+  
+commit @browser
+  element += #editing
+```
+
+`#editables` in editing mode have an #input instead of a #div
+
+```
+search @browser
+  editable = [#editable #editing]
+  value = if editable.value then editable.value
+          else ""
+          
+bind @browser
+  editable.children := [#input value autofocus: true]
+```
+
+Pressing "enter" while editing an #editable will save its current text and revert the editable back to its original state
+
+```
+search @browser
+  editable = [#editable children: [#input value]]
+
+search @event
+  event = [#keydown element: editable key: "enter"]
+  
+commit @browser
+  editable -= #editing
+  editable.value := value
+```
+
+## Image Container
+
+```
+search @browser
+  image-container = [#image-container]
+  
+bind @browser
+  image-container += #div
+```
+
+An empty image container prompts the user to upload an image
+
+```
+search @browser
+  image-container = [#image-container not(image)]
+  prompt-text = if image-container.prompt then image-container.prompt
+                else "Choose an image"
+  
+bind @browser
+  image-container.children := [#div text: prompt-text]
+```
+
+Clicking on an image container opens a dialogue to change the image. Image sources are from a URL, local storage, or captured from the camera (if available).
+
+```
+search @browser
+  image-container = [#image-container]
+
+search @event
+  event = [#click element: image-container]
+  
+commit @browser
+  image-container += #editing
+
+```
+
+An #image-container in #editing mode displays options for uploading an image
+@TODO - add local storage and camera upload options
+```
+search @browser
+  image-container = [#image-container #editing]
+  
+bind @browser
+  image-container.children := [#input]
+```
+
+Enter a URL into the input box to display it
+
+```
+search @browser
+  image-container = [#image-container #editing children: [#input value]]
+  
+search @event
+  [#keydown element: image-container, key: "enter"]
+  
+commit @browser
+  image-container -= #editing
+  image-container.image := value
+```
+
+If the image container is assigned an image, display it
+
+```
+search @browser
+  image-container = [#image-container image]
+
+bind @browser
+  image-container.children := [#img src: image]
 ```
