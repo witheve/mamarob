@@ -34,22 +34,40 @@ search
    item = [#menu name image cost]
 
 bind @browser
-   wrapper = [#div style: [display:"flex" flex:"0 0 auto" flex-direction:"column"]
-    children:
-      //checkout
-      [#div #checkout style: [display: "flex" flex: "0 0 auto" flex-direction: "row"] children:
-        [#div #cart style:[width:30 height: 30 content:"url(assets/shopping-cart-icon-30.png)"]]]
-      //menu
-      [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column"]
-       children:
-         [#menu-item #description #buyable item]]]
+  wrapper <- [children:
+  
+    // Menu
+    [#div class: "flex-row" style: [position: "relative" justify-content: "center" align-items: "center"] children:
+      [#h3 text: "Menu" style: [
+        margin: "10 0"
+        font-size: "2em"
+        text-decoration: "underline"]]
+      [#cart-btn]
+      ]
+    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
+     children:
+       [#menu-item #description #buyable item]]]
 ```
 
-Display a quantity badge on the shopping cart.
+Draw the cart button.
+```
+search @browser
+  wrapper = [#cart-btn]
+
+bind @browser
+  wrapper <- [#div class: "flex-row"
+    style: [flex: "0 0 auto" position: "absolute" width: 70 right: 0] 
+    children:
+      [#div #cart class: "btn" style: [
+        height: 30 padding: "0 5"
+        content:"url(assets/shopping-cart-icon-30.png)"]]]
+```
+
+Display a quantity badge on the shopping cart button.
 
 ```eve
 search @browser
-  [#page-wrapper page:"homepage"]
+  wrapper = [#cart-btn]
   
 search
   [#app order]
@@ -57,13 +75,8 @@ search
   item-count = sum[value: count per:order given:item]
   item-count > 0
 
-search @browser
-  parent = [#div #checkout]
-
 bind @browser
-  t = [#div #total-items class: "qty-badge"]
-  parent.children += t
-  t.text := "{{item-count}}"
+  wrapper.children += [#div #total-items class: "qty-badge" text: "({{item-count}})"]
 ```
 
 Navigate to the checkout page.
@@ -77,6 +90,9 @@ commit
   a.page := "checkout"
 ```
 
+```css
+
+```
 
 ### Checkout Page
 
@@ -752,6 +768,19 @@ bind @browser
     [#div #nav-btn page:"settings" text:"Truck Settings"]]
 ```
 
+Highlight the currently active page.
+
+```
+search @browser
+  nav-btn = [#nav-btn page]
+  
+search
+  [#app page]
+  
+bind @browser
+  nav-btn.style += [background: "#606060" color: "white"]
+```
+
 Change the current page in response to a click.
 
 ```
@@ -1031,7 +1060,7 @@ Since the style differences for individual modes are so small, they've all been 
 
 .menu-item .qty-badge {
   position: absolute;
-  left: 42;
+  left: 52;
   top: 10;
   width: 24;
   height: 24;
