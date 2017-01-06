@@ -35,12 +35,25 @@ search
 
 bind @browser
   wrapper <- [children:
+    // Hero
+    [#div style: [
+      height: 320
+      background-image: "url(https://goo.gl/j1Jpue)"
+      background-size: "cover"]]
+  
+    // Location
+    [#div class: "flex-row" style: [align-items: "center" height: "5em" overflow: "hidden"  background: "#EEE"]
+      children:
+        [#h3 text: "Location Now:" style: [flex: "0 0 auto" padding: "0 20" margin: 0 font-size: "2em" font-weight: 200]]
+        [#img #mapz src: "https://goo.gl/euvdoF"
+          style: [flex: 1 background-size: "cover"]]]
   
     // Menu
     [#div class: "flex-row" style: [position: "relative" justify-content: "center" align-items: "center"] children:
       [#h3 text: "Menu" style: [
         margin: "10 0"
         font-size: "2em"
+        font-weight: 200
         text-decoration: "underline"]]
       [#cart-btn]
       ]
@@ -797,7 +810,7 @@ commit
   display: flex;
   flex-direction: column;
   position: absolute;
-  top: 0; left: 0; right: 0; min-height: 100%;
+  top: 0; left: 0; right: 0; bottom: 0; min-height: 100%;
   padding: 20;
   background: #404040;
 }
@@ -807,6 +820,7 @@ commit
   background: white;
   width: 540;
   height: 960;
+  overflow-y: auto;
 }
   
 .nav-panel {
