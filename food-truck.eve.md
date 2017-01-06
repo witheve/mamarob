@@ -818,8 +818,8 @@ commit
 .page-wrapper {
   align-self: center;
   background: white;
-  width: 540;
-  height: 960;
+  width: 432;
+  height: 768;
   overflow-y: auto;
 }
   
