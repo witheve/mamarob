@@ -325,6 +325,18 @@ bind @browser
 - If either name or price forms do not have information, pop up an error message saying “You’re missing a name/price!” with an OK button to revert to item listing
 
 ### Social Media
+
+Draw the social media page
+
+```
+search @browser
+  wrapper = [#page-wrapper page: "social-flow"]
+  
+bind @browser
+  wrapper.children := [#div text: "social flow"]
+```
+
+
 - Draw top banner
 - Draw truck name
 - Draw back button
@@ -749,7 +761,8 @@ bind @browser
     [#div #nav-btn page:"checkout" text: "Checkout"]
     [#div #nav-btn page:"user-queue" text:"User Queue"]
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
-    [#div #nav-btn page:"settings" text:"Truck Settings"]]
+    [#div #nav-btn page:"settings" text:"Truck Settings"]
+    [#div #nav-btn page:"social-flow" text:"Social Flow"]]
 ```
 
 Change the current page in response to a click.
@@ -796,6 +809,7 @@ commit
   border-radius: 6px;
   margin-right: 10px;
   padding: 0px 8px 0px;
+  cursor: pointer;
 }
 
 ```
