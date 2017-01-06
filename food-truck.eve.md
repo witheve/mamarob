@@ -27,18 +27,20 @@ wouldn't it be better to just not draw?
 Draw the homepage.
 
 ```eve
+search @browser
+   wrapper = [#page-wrapper page:"homepage"]
+  
 search
-   [#app page:"homepage"]
    item = [#menu name image cost]
 
 bind @browser
-   [#div style: [display:"flex" flex:"0 0 auto" flex-direction:"column"]
+   wrapper = [#div style: [display:"flex" flex:"0 0 auto" flex-direction:"column"]
     children:
       //checkout
       [#div #checkout style: [display: "flex" flex: "0 0 auto" flex-direction: "row"] children:
         [#div #cart style:[width:30 height: 30 content:"url(assets/shopping-cart-icon-30.png)"]]]
       //menu
-      [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column" overflow-y: "auto", height: "100%"]
+      [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column"]
        children:
          [#menu-item #description #buyable item]]]
 ```
@@ -46,8 +48,11 @@ bind @browser
 Display a quantity badge on the shopping cart.
 
 ```eve
+search @browser
+  [#page-wrapper page:"homepage"]
+  
 search
-  [#app page:"homepage" order]
+  [#app order]
   [#order-item order item count]
   item-count = sum[value: count per:order given:item]
   item-count > 0
@@ -85,23 +90,29 @@ commit
 
 display the nav button, which is unconditional
 ```eve
+search @browser
+  wrapper = [#page-wrapper page: "checkout"]
+  
 search
-   [#app page:"checkout" order]
+   [#app order]
 bind @browser
-   [#div #from-checkout-to-home text:"back to menu!" style:[border:"2px solid black"]]
+   wrapper.children += [#div #from-checkout-to-home text:"back to menu!" style:[border:"2px solid black"]]
 ```
 
 
 display the current order
 - Draw a user queue banner at the very top if an order is pending for them
 ```eve
+search @browser
+  wrapper = [#page-wrapper page: "checkout"]
+  
 search
-   [#app page:"checkout" order]
+   [#app order]
    [#order-item order item count]
    not (count = 0)
    total = sum[value: count * item.cost per:order given:item]
 bind @browser
-   [#div #checkout-container
+   wrapper.children += [#div #checkout-container
      style:[flex-direction:"column" display:"flex"]
      children:
        [#div text:"{{item.name}} {{count}} x {{item.cost}} = {{count * item.cost}}" sort:1]
@@ -157,15 +168,17 @@ commit
 - Draw back button to go back to home page
 
 ```
+search @browser
+  wrapper = [#page-wrapper page: "user-queue"]
+  
 search
-  [#app page:"user-queue"]
   order = [#order #my-order number items status]
   (ahead, message, my-status) = if status:"ready" then ("Your order is ready!","","ready")
     else if count[given: [#order status:"pending" number < order.number]] = 1 then ("1","order ahead of you!","ahead")
     else if ahead = count[given: [#order status:"pending" number < order.number]] then (ahead,"orders ahead of you!","ahead")
     else ("0","orders ahead of you!","ahead")
 bind @browser
-  [#div class:"my-order" children:
+  wrapper.children += [#div class:"my-order" children:
     [#div class:"order-confirmed" text:"Order confirmed!"]
     [#div class:my-status text:ahead]
     [#div class:"msg" text:message]
@@ -360,13 +373,13 @@ Structure the page
 
 ```
 search @browser @session
-  [#app app page: "settings"]
+  wrapper = [#page-wrapper page: "settings"]
   integration = [#integration]
   enabled? = if integration = [#enabled] then ""
              else "-outline"
 
 bind @browser
-  app.children := [#div children:
+  wrapper.children := [#div children:
   	[#div #page-header children:
   		[#editable #truck-name default: "Tap to name your truck"]
       [#button #edit-truck-name text: "edit"]
@@ -447,10 +460,11 @@ Draw credential forms
 
 ```
 search @browser @session
-  [#app app integration page: "integration setup"]
+  wrapper = [#page-wrapper page: "integration setup"]
+  [#app integration]
   
 bind @browser
-  app.children := [#div children:
+  wrapper.children := [#div children:
     [#div class: "ion-social-{{integration.name}}"]
     [#div text: "Sign in to {{integration.name}}"]
     [#input #username placeholder: "Username"]
@@ -569,8 +583,10 @@ Orders are placed by the customer on their mobile device or by the cashier in th
 This block draws orders in the browser that have an order number, items in the order, and a status that isn't `done`. It excludes orders that are `done` so that once an order is complete, it is simply no longer drawn on the screen. In the future if we want to add a fancier disappearing or completion animation, etc, this block might have to be changed but for now the simple solution suits our needs. There is also some included `if` logic that draws the right icon with each order and keeps them sorted such that orders ready for pickup are always at the top, and all remain sorted by order number.
 
 ```eve
+search @browser
+  wrapper = [#page-wrapper page: "order-queue"]
+  
 search
-  [#app page:"order-queue"]
   order = [#order number items status]
   status != "done"
   icon = if status = "ready" then "ion-android-checkmark-circle"
@@ -579,7 +595,7 @@ search
                             else if status = "ready" then "style-ready"
   index = sort[value: (status, number), direction: ("down", "up")]
 bind @browser
-  [#div sort:index class:("pending-order" order-style) #pending-order order children:
+  wrapper.children += [#div sort:index class:("pending-order" order-style) #pending-order order children:
     [#div class:"order-number" text:number]
     [#div class:"order-items" children:
         [#div text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]]
@@ -700,18 +716,34 @@ commit
 
 # Components
 
-## Page view control
+## App Wrapper
+### Page Template
+
 ```
 search
   [#app page]
 bind @browser
-  [#div class:"nav-panel" children:
+  [#div #app-wrapper class: "app-wrapper" children:
+    [#div #page-wrapper class: "page-wrapper" page]
+    [#nav-panel sort: 2]]
+```
+
+### Nav Panel (debug)
+Display a list of pages to switch between. In the actual application this will occur through  one of the four built in user flows.
+
+```
+search @browser
+  wrapper = [#nav-panel]
+bind @browser
+  wrapper <- [#div class:"nav-panel" children:
     [#div #nav-btn page:"homepage" text:"Home"]
     [#div #nav-btn page:"checkout" text: "Checkout"]
     [#div #nav-btn page:"user-queue" text:"User Queue"]
-    [#div #nav-btn page:"order-queue" text:"Order Queue"]]
+    [#div #nav-btn page:"order-queue" text:"Order Queue"]
     [#div #nav-btn page:"settings" text:"Truck Settings"]]
 ```
+
+Change the current page in response to a click.
 
 ```
 search @browser @event @session
@@ -723,6 +755,22 @@ commit
 ```
 
 ```css
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 0; left: 0; right: 0; min-height: 100%;
+  padding: 20;
+  background: #404040;
+}
+
+.page-wrapper {
+  align-self: center;
+  background: white;
+  width: 540;
+  height: 960;
+}
+  
 .nav-panel {
   display: flex;
   flex-direction: row;
@@ -732,6 +780,7 @@ commit
 }
 
 .nav-panel > div {
+  color: #eee;
   font-size: 14px;
   line-height: 30px;
   border: 1px solid black;
@@ -929,7 +978,6 @@ Since the style differences for individual modes are so small, they've all been 
   align-items: center;
   position: relative;
   padding: 10 20;
-  max-width: 500;
   min-height: 80;
   background: white;
 }
@@ -941,7 +989,7 @@ Since the style differences for individual modes are so small, they've all been 
   align-self: stretch;
   flex: 0 0 90px;
   max-height: 90px;
-  margin: 0 -10;
+  margin: 0;
   margin-right: 10;
   background-size: cover;
   background-repeat: no-repeat;
@@ -969,7 +1017,7 @@ Since the style differences for individual modes are so small, they've all been 
   font-size: 10pt;
 }
 
-.menu-item .item-cost { margin-left: 10; }
+.menu-item .item-cost { margin: 0 10; }
 .menu-item .item-cost:before { content: "$"; }
 
 .menu-item .qty-badge {
