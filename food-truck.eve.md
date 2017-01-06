@@ -356,6 +356,15 @@ bind @browser
 
 ### Truck Settings
 
+Add some integrations
+
+```
+commit
+  [#integration name: "twitter"]
+  [#integration name: "instagram"]
+  [#integration name: "facebook"]
+```
+
 Structure the page
 
 ```
