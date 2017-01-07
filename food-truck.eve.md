@@ -34,22 +34,53 @@ search
    item = [#menu name image cost]
 
 bind @browser
-   wrapper = [#div style: [display:"flex" flex:"0 0 auto" flex-direction:"column"]
-    children:
-      //checkout
-      [#div #checkout style: [display: "flex" flex: "0 0 auto" flex-direction: "row"] children:
-        [#div #cart style:[width:30 height: 30 content:"url(assets/shopping-cart-icon-30.png)"]]]
-      //menu
-      [#div #menu-pane style:[display:"flex" flex:"0 0 auto" flex-direction:"column"]
-       children:
-         [#menu-item #description #buyable item]]]
+  wrapper <- [children:
+    // Hero
+    [#div style: [
+      height: 320
+      background-image: "url(https://goo.gl/j1Jpue)"
+      background-size: "cover"]]
+  
+    // Location
+    [#div class: "flex-row" style: [align-items: "center" height: "5em" overflow: "hidden"  background: "#EEE"]
+      children:
+        [#h3 text: "Location Now:" style: [flex: "0 0 auto" padding: "0 20" margin: 0 font-size: "2em" font-weight: 200]]
+        [#img #mapz src: "https://goo.gl/euvdoF"
+          style: [flex: 1 background-size: "cover"]]]
+  
+    // Menu
+    [#div class: "flex-row" style: [position: "relative" justify-content: "center" align-items: "center"] children:
+      [#h3 text: "Menu" style: [
+        margin: "10 0"
+        font-size: "2em"
+        font-weight: 200
+        text-decoration: "underline"]]
+      [#cart-btn]
+      ]
+    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
+     children:
+       [#menu-item #description #buyable item]]]
 ```
 
-Display a quantity badge on the shopping cart.
+Draw the cart button.
+```
+search @browser
+  wrapper = [#cart-btn]
+
+bind @browser
+  wrapper <- [#div class: "flex-row"
+    style: [flex: "0 0 auto" position: "absolute" width: 70 right: 0] 
+    children:
+      [#div #cart class: "btn" style: [
+        height: 30 padding: "0 5"
+        content:"url(assets/shopping-cart-icon-30.png)"]]]
+```
+
+Display a quantity badge on the shopping cart button.
 
 ```eve
 search @browser
-  [#page-wrapper page:"homepage"]
+  wrapper = [#cart-btn]
   
 search
   [#app order]
@@ -57,13 +88,8 @@ search
   item-count = sum[value: count per:order given:item]
   item-count > 0
 
-search @browser
-  parent = [#div #checkout]
-
 bind @browser
-  t = [#div #total-items class: "qty-badge"]
-  parent.children += t
-  t.text := "{{item-count}}"
+  wrapper.children += [#div #total-items class: "qty-badge" text: "({{item-count}})"]
 ```
 
 Navigate to the checkout page.
@@ -77,6 +103,9 @@ commit
   a.page := "checkout"
 ```
 
+```css
+
+```
 
 ### Checkout Page
 
@@ -190,8 +219,6 @@ bind @browser
 
 ```css
 .my-order {
-  border: 1px solid #000000;
-  border-radius: 6px;
   flex: 0 0 600px;
   margin-bottom: 20px;
   display: flex;
@@ -471,7 +498,6 @@ Draw credential forms
 search @browser @session
   wrapper = [#page-wrapper page: "integration setup"]
   [#app integration]
-  
 bind @browser
   wrapper.children := [#div children:
     [#div class: "ion-social-{{integration.name}}"]
@@ -752,6 +778,19 @@ bind @browser
     [#div #nav-btn page:"settings" text:"Truck Settings"]]
 ```
 
+Highlight the currently active page.
+
+```
+search @browser
+  nav-btn = [#nav-btn page]
+  
+search
+  [#app page]
+  
+bind @browser
+  nav-btn.style += [background: "#606060" color: "white"]
+```
+
 Change the current page in response to a click.
 
 ```
@@ -768,7 +807,7 @@ commit
   display: flex;
   flex-direction: column;
   position: absolute;
-  top: 0; left: 0; right: 0; min-height: 100%;
+  top: 0; left: 0; right: 0; bottom: 0; min-height: 100%;
   padding: 20;
   background: #404040;
 }
@@ -776,8 +815,9 @@ commit
 .page-wrapper {
   align-self: center;
   background: white;
-  width: 540;
-  height: 960;
+  width: 432;
+  height: 768;
+  overflow-y: auto;
 }
   
 .nav-panel {
@@ -1031,7 +1071,7 @@ Since the style differences for individual modes are so small, they've all been 
 
 .menu-item .qty-badge {
   position: absolute;
-  left: 42;
+  left: 52;
   top: 10;
   width: 24;
   height: 24;
