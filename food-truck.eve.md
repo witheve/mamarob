@@ -219,8 +219,6 @@ bind @browser
 
 ```css
 .my-order {
-  border: 1px solid #000000;
-  border-radius: 6px;
   flex: 0 0 600px;
   margin-bottom: 20px;
   display: flex;
@@ -500,7 +498,6 @@ Draw credential forms
 search @browser @session
   wrapper = [#page-wrapper page: "integration setup"]
   [#app integration]
-  
 bind @browser
   wrapper.children := [#div children:
     [#div class: "ion-social-{{integration.name}}"]
