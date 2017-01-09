@@ -323,6 +323,16 @@ bind @browser
 - Swipe right to turn item on
 - Clicking brings up item listing overlay
 
+```
+search @browser
+  wrapper = [#page-wrapper page: "owner"]
+  
+bind @browser
+  wrapper <- [children:
+  [#div text: "hi"]
+  ]
+```
+
 ### Item Listing
 - Draw item photo
 - Blank by default
@@ -775,7 +785,8 @@ bind @browser
     [#div #nav-btn page:"checkout" text: "Checkout"]
     [#div #nav-btn page:"user-queue" text:"User Queue"]
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
-    [#div #nav-btn page:"settings" text:"Truck Settings"]]
+    [#div #nav-btn page:"settings" text:"Truck Settings"]
+    [#div #nav-btn page:"owner" text:"Owner"]]
 ```
 
 Highlight the currently active page.
