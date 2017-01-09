@@ -5,7 +5,7 @@
 start the app for the user, landing on the menu page. here we create a new
 empty order record.
 ```
-  commit [#app page:"homepage" order:[]]
+  commit [#app page:"homepage" order:[] settings: []]
 ```
 
 ### Website Home Page
@@ -352,19 +352,116 @@ bind @browser
 - If either name or price forms do not have information, pop up an error message saying “You’re missing a name/price!” with an OK button to revert to item listing
 
 ### Social Media
-- Draw top banner
-- Draw truck name
-- Draw back button
-- Clicking takes you back to the home screen
-- Draw message text form
-- Draw picture icon
-- Clicking lets you choose photo from phone storage or live photo
-- Draw social media icons
-- Facebook
-- Twitter
-- Instagram
-- All off by default
-- Clicking turns on that site for posting
+
+Draw the social media page. There are two cases we want to handle. If the truck isn't set up or there are no #enabled social media #integrations, then we should display a message prompting the owner to add those in.
+
+```
+search @browser @session
+  wrapper = [#page-wrapper page: "social-flow"]
+  // Is there a better way to do this? I want the message to display if either of these conditions are true
+  not([#app settings: [truck-name]]
+  [#integration #enabled])
+  
+bind @browser
+  wrapper.children := [#div children: 
+    [#div text: "Set up your truck to use social features"]
+    [#button #to-settings text: "Truck Settings"]]
+```
+
+Navigate to the settings page when the button is clicked
+
+```
+search
+  app = [#app]
+  
+search @event @browser
+  [#click element: [#button #to-settings]]
+  
+commit
+  app.page := "settings"
+```
+
+When the truck has a name and at least one integration, draw the complete social interface
+
+```
+search @browser
+  wrapper = [#page-wrapper page: "social-flow"]
+  
+search
+  app = [#app settings: [truck-name]]
+
+  // Integrations
+  integration = [#integration #enabled]
+  selected? = if integration = [#selected] then ""
+              else "-outline"
+  
+bind @browser
+  wrapper.children := [#div children: 
+    [#div text: truck-name]
+    [#button #to-home text: "home"]
+    [#div children:
+      [#div text: "Add a message:"]
+      [#editable #social-message default: "message..."]]    
+    [#div #integrations children:
+      [#div text: "Add a photo:"]
+      [#image-container #social-image prompt: "photo..."]]
+    [#div children: 
+      [#div text: "Select social networks"]
+      [#span #integration integration class: "ion-social-{{integration.name}}{{selected?}}"]]
+    [#button #post-social text: "Post"]]
+```
+
+Clicking an integration toggles its selection status for posting
+
+```
+search
+  [#app page: "social-flow"]
+
+search @browser @event @session
+  [#click element]
+  element = [#integration integration]
+  (add, remove) = if integration = [#selected] then ("","selected")
+                  else ("selected", "")
+  
+  
+commit
+  integration.tag += add
+  integration.tag -= remove  
+```
+
+The "post" button is enabled when at least one social integration is selected, and a message or an image is uploaded
+
+```
+search @browser @session
+  x = if [#social-message value] then ""
+      else if [#social-image image] then  ""
+  [#integration #selected]
+  post-button = [#post-social]
+  
+bind @browser
+  post-button += #enabled
+  post-button.class += "enabled"
+```
+
+When an enabled "post" button i clicked, submit the message and photo to the relevent social networks
+
+```
+search @browser @event @session
+  [#click element: [#button #post-social #enabled]]
+  message = if [#social-message value] then value
+            else ""
+  image = if [#social-image image] then image
+          else ""
+  [#integration #selected name]
+  [#time timestamp]
+  
+commit
+  [#social-message message image, time: timestamp, network: name]
+```
+
+
+Delayed Posting:
+
 - If credentials are missing, bring up credential screen
 - Draw time box
 - Says “When?” if no choice has been entered yet
@@ -382,17 +479,21 @@ bind @browser
 - If “Now” is toggled on, choose now and revert to social media screen
 - If “Now” is not toggled on, and both a date and a time have been selected, choose that time and revert to social media screen
 - If “Now” is not toggled on, and either a time or a date is missing, flash box red and do nothing
-- Draw “Post!” button
-- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
-- When clicked, if time selected is “Now”, commit the message to social media
-- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
-- Draw social media queue
+
+Draw social media queue:
+
 - Draw thumbnail photo if there’s a photo on the post
 - Draw preview text
 - Draw scheduled time to post
 - Swipe left to remove from the queue
 - Click to parse post details into the social media form and remove message from the queue
 - Replace any contents that may already be present with contents from queued post
+
+Draw “Post!” button
+- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
+- When clicked, if time selected is “Now”, commit the message to social media
+- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
+
 
 ### Truck Settings
 
@@ -436,11 +537,13 @@ search @browser
   [#truck-name value]
   
 search
-  [#app #owner settings]
+  [#app settings]
   
 commit
   settings.truck-name := value
+
 ```
+
 
 Put editable into editing mode when the button is clicked
 
@@ -473,7 +576,7 @@ search @browser
   [#truck-description value]
 
 search
-  [#app #owner settings]
+  [#app settings]
   
 bind
   settings.truck-description := value
@@ -485,10 +588,10 @@ Clicking on an integration opens up a page to enter credentials.
 ```
 search @event @browser @session
   [#click element: [#integration integration]]
-  app = [#app]
+  app = [#app page: "settings"]
   
 commit
-  app.page := "integration setup"
+  app.page := "integration-setup"
   app.integration := integration
 ```
 
@@ -496,8 +599,9 @@ Draw credential forms
 
 ```
 search @browser @session
-  wrapper = [#page-wrapper page: "integration setup"]
+  wrapper = [#page-wrapper page: "integration-setup"]
   [#app integration]
+  
 bind @browser
   wrapper.children := [#div children:
     [#div class: "ion-social-{{integration.name}}"]
@@ -519,10 +623,9 @@ search @event @browser @session
   [#password value: password]
   [#username value: username]
   [#app integration]
-
+  
 commit
-  integration.credentials.username := username
-  integration.credentials.password := password
+  integration.credentials := [username password]
 ```
 
 Clicking cancel goes back to the settings page
@@ -545,19 +648,25 @@ Send credentials
 ```
 search
   integration = [#integration name: "twitter" credentials: [username password]]
-  
+  [#time timestamp]
+  not(integration = [#sent])
+
 commit
   integration += #pending
+  integration += #sent
   
+
 commit @twitter
-  [#login username password]
+  [#login username password time: timestamp]
 ```
 
 Handle login response from twitter. For now, just throw back a success. The following block would be part of the Eve twitter integration
 
 ```
-search @twitter
-  login = [#login username password]
+search @twitter @session
+  login = [#login username password time]
+  [#time timestamp]
+  timestamp - time > 1000 // Validate after 1s
   
 commit @twitter
   login += #success
@@ -567,7 +676,7 @@ Get the response from twitter, and modify our internal twitter record
 
 ```
 search @twitter
-  [#login #success]
+  [#login #success username password]
   
 search
   integration = [#integration #pending name: "twitter"]
@@ -577,6 +686,7 @@ commit
   integration -= #pending
   integration += #enabled
   app.page := "settings"
+
 ```
 
 
@@ -750,13 +860,13 @@ commit
 ```
 
 # Components
-
 ## App Wrapper
 ### Page Template
 
 ```
 search
-  [#app page]
+  app = [#app page]
+  
 bind @browser
   [#div #app-wrapper class: "app-wrapper" children:
     [#div #page-wrapper class: "page-wrapper" page]
@@ -769,13 +879,15 @@ Display a list of pages to switch between. In the actual application this will o
 ```
 search @browser
   wrapper = [#nav-panel]
+  
 bind @browser
   wrapper <- [#div class:"nav-panel" children:
     [#div #nav-btn page:"homepage" text:"Home"]
     [#div #nav-btn page:"checkout" text: "Checkout"]
     [#div #nav-btn page:"user-queue" text:"User Queue"]
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
-    [#div #nav-btn page:"settings" text:"Truck Settings"]]
+    [#div #nav-btn page:"settings" text:"Truck Settings"]
+    [#div #nav-btn page:"social-flow" text:"Social Flow"]]
 ```
 
 Highlight the currently active page.
@@ -793,13 +905,13 @@ bind @browser
 
 Change the current page in response to a click.
 
-```
+```eve
 search @browser @event @session
   view = [#app]
   click = [#click element:[#nav-btn page]]
+  
 commit
   view.page := page
-
 ```
 
 ```css
@@ -836,6 +948,7 @@ commit
   border-radius: 6px;
   margin-right: 10px;
   padding: 0px 8px 0px;
+  cursor: pointer;
 }
 
 ```
