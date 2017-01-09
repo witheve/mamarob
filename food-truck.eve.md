@@ -359,8 +359,8 @@ Draw the social media page. There are two cases we want to handle. If the truck 
 search @browser @session
   wrapper = [#page-wrapper page: "social-flow"]
   // Is there a better way to do this? I want the message to display if either of these conditions are true
-  x = if not([#app settings: [truck-name]]) then ""
-      if not([#integration #enabled]) then ""
+  not([#app settings: [truck-name]]
+  [#integration #enabled])
   
 bind @browser
   wrapper.children := [#div children: 
@@ -388,9 +388,7 @@ search @browser
   wrapper = [#page-wrapper page: "social-flow"]
   
 search
-  app = [#app]
-  name = if app.settings.truck-name then app.settings.truck-name
-         else "Default"
+  app = [#app settings: [truck-name]]
 
   // Integrations
   integration = [#integration #enabled]
@@ -399,7 +397,7 @@ search
   
 bind @browser
   wrapper.children := [#div children: 
-    [#div text: name]
+    [#div text: truck-name]
     [#button #to-home text: "home"]
     [#div children:
       [#div text: "Add a message:"]
