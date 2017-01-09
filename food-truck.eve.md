@@ -362,15 +362,10 @@ search @browser @session
   x = if not([#app settings: [truck-name]]) then ""
       if not([#integration #enabled]) then ""
   
-  
-  
 bind @browser
   wrapper.children := [#div children: 
     [#div text: "Set up your truck to use social features"]
-    [#button #to-settings text: "Truck Settings"]
-  ]
-
-
+    [#button #to-settings text: "Truck Settings"]]
 ```
 
 Navigate to the settings page when the button is clicked
@@ -386,7 +381,7 @@ commit
   app.page := "settings"
 ```
 
-When the truck has a name and at lest one integration, draw the complete social interface
+When the truck has a name and at least one integration, draw the complete social interface
 
 ```
 search @browser
@@ -399,29 +394,76 @@ search
 
   // Integrations
   integration = [#integration #enabled]
-  
+  selected? = if integration = [#selected] then ""
+              else "-outline"
   
 bind @browser
   wrapper.children := [#div children: 
     [#div text: name]
     [#button #to-home text: "home"]
+    [#div children:
+      [#div text: "Add a message:"]
+      [#editable #social-message default: "message..."]]    
     [#div #integrations children:
-  [#span #integration integration class: "ion-social-{{integration.name}}"]]
-  ]
+      [#div text: "Add a photo:"]
+      [#image-container #social-image prompt: "photo..."]]
+    [#div children: 
+      [#div text: "Select social networks"]
+      [#span #integration integration class: "ion-social-{{integration.name}}{{selected?}}"]]
+    [#button #post-social text: "Post"]]
+```
 
+Clicking an integration toggles its selection status for posting
+
+```
+search
+  [#app page: "social-flow"]
+
+search @browser @event @session
+  [#click element]
+  element = [#integration integration]
+  (add, remove) = if integration = [#selected] then ("","selected")
+                  else ("selected", "")
+  
+  
+commit
+  integration.tag += add
+  integration.tag -= remove  
+```
+
+The "post" button is enabled when at least one social integration is selected, and a message or an image is uploaded
+
+```
+search @browser @session
+  x = if [#social-message value] then ""
+      else if [#social-image image] then  ""
+  [#integration #selected]
+  post-button = [#post-social]
+  
+bind @browser
+  post-button += #enabled
+  post-button.class += "enabled"
+```
+
+When an enabled "post" button i clicked, submit the message and photo to the relevent social networks
+
+```
+search @browser @event @session
+  [#click element: [#button #post-social #enabled]]
+  message = if [#social-message value] then value
+            else ""
+  image = if [#social-image image] then image
+          else ""
+  [#integration #selected name]
+  [#time timestamp]
+  
+commit
+  [#social-message message image, time: timestamp, network: name]
 ```
 
 
+Delayed Posting:
 
-- Draw message text form
-- Draw picture icon
-- Clicking lets you choose photo from phone storage or live photo
-- Draw social media icons
-- Facebook
-- Twitter
-- Instagram
-- All off by default
-- Clicking turns on that site for posting
 - If credentials are missing, bring up credential screen
 - Draw time box
 - Says “When?” if no choice has been entered yet
@@ -439,17 +481,21 @@ bind @browser
 - If “Now” is toggled on, choose now and revert to social media screen
 - If “Now” is not toggled on, and both a date and a time have been selected, choose that time and revert to social media screen
 - If “Now” is not toggled on, and either a time or a date is missing, flash box red and do nothing
-- Draw “Post!” button
-- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
-- When clicked, if time selected is “Now”, commit the message to social media
-- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
-- Draw social media queue
+
+Draw social media queue:
+
 - Draw thumbnail photo if there’s a photo on the post
 - Draw preview text
 - Draw scheduled time to post
 - Swipe left to remove from the queue
 - Click to parse post details into the social media form and remove message from the queue
 - Replace any contents that may already be present with contents from queued post
+
+Draw “Post!” button
+- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
+- When clicked, if time selected is “Now”, commit the message to social media
+- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
+
 
 ### Truck Settings
 
@@ -544,7 +590,7 @@ Clicking on an integration opens up a page to enter credentials.
 ```
 search @event @browser @session
   [#click element: [#integration integration]]
-  app = [#app]
+  app = [#app page: "settings"]
   
 commit
   app.page := "integration-setup"
@@ -557,6 +603,7 @@ Draw credential forms
 search @browser @session
   wrapper = [#page-wrapper page: "integration-setup"]
   [#app integration]
+  
 bind @browser
   wrapper.children := [#div children:
     [#div class: "ion-social-{{integration.name}}"]
@@ -644,13 +691,6 @@ commit
 
 ```
 
-```
-search
-  [#integration tag]
-  
-bind @browser
-  [#div text: "tag: {{tag}}"]
-```
 
 ## Cashier
 
