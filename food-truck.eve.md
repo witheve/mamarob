@@ -5,7 +5,7 @@
 start the app for the user, landing on the menu page. here we create a new
 empty order record.
 ```
-  commit [#app page:"homepage" order:[]]
+  commit [#app page:"homepage" order:[] settings: []]
 ```
 
 ### Website Home Page
@@ -326,21 +326,66 @@ bind @browser
 
 ### Social Media
 
-Draw the social media page
+Draw the social media page. There are two cases we want to handle. If the truck isn't set up or there are no #enabled social media #integrations, then we should display a message prompting the owner to add those in.
+
+```
+search @browser @session
+  wrapper = [#page-wrapper page: "social-flow"]
+  // Is there a better way to do this? I want the message to display if either of these conditions are true
+  x = if not([#app settings: [truck-name]]) then ""
+      if not([#integration #enabled]) then ""
+  
+  
+  
+bind @browser
+  wrapper.children := [#div children: 
+    [#div text: "Set up your truck to use social features"]
+    [#button #to-settings text: "Truck Settings"]
+  ]
+
+
+```
+
+Navigate to the settings page when the button is clicked
+
+```
+search
+  app = [#app]
+  
+search @event @browser
+  [#click element: [#button #to-settings]]
+  
+commit
+  app.page := "settings"
+```
+
+When the truck has a name and at lest one integration, draw the complete social interface
 
 ```
 search @browser
   wrapper = [#page-wrapper page: "social-flow"]
   
+search
+  app = [#app]
+  name = if app.settings.truck-name then app.settings.truck-name
+         else "Default"
+
+  // Integrations
+  integration = [#integration #enabled]
+  
+  
 bind @browser
-  wrapper.children := [#div text: "social flow"]
+  wrapper.children := [#div children: 
+    [#div text: name]
+    [#button #to-home text: "home"]
+    [#div #integrations children:
+  [#span #integration integration class: "ion-social-{{integration.name}}"]]
+  ]
+
 ```
 
 
-- Draw top banner
-- Draw truck name
-- Draw back button
-- Clicking takes you back to the home screen
+
 - Draw message text form
 - Draw picture icon
 - Clicking lets you choose photo from phone storage or live photo
@@ -421,11 +466,13 @@ search @browser
   [#truck-name value]
   
 search
-  [#app #owner settings]
+  [#app settings]
   
 commit
   settings.truck-name := value
+
 ```
+
 
 Put editable into editing mode when the button is clicked
 
@@ -458,7 +505,7 @@ search @browser
   [#truck-description value]
 
 search
-  [#app #owner settings]
+  [#app settings]
   
 bind
   settings.truck-description := value
@@ -473,7 +520,7 @@ search @event @browser @session
   app = [#app]
   
 commit
-  app.page := "integration setup"
+  app.page := "integration-setup"
   app.integration := integration
 ```
 
@@ -481,7 +528,7 @@ Draw credential forms
 
 ```
 search @browser @session
-  wrapper = [#page-wrapper page: "integration setup"]
+  wrapper = [#page-wrapper page: "integration-setup"]
   [#app integration]
   
 bind @browser
@@ -505,10 +552,9 @@ search @event @browser @session
   [#password value: password]
   [#username value: username]
   [#app integration]
-
+  
 commit
-  integration.credentials.username := username
-  integration.credentials.password := password
+  integration.credentials := [username password]
 ```
 
 Clicking cancel goes back to the settings page
@@ -531,19 +577,25 @@ Send credentials
 ```
 search
   integration = [#integration name: "twitter" credentials: [username password]]
-  
+  [#time timestamp]
+  not(integration = [#sent])
+
 commit
   integration += #pending
+  integration += #sent
   
+
 commit @twitter
-  [#login username password]
+  [#login username password time: timestamp]
 ```
 
 Handle login response from twitter. For now, just throw back a success. The following block would be part of the Eve twitter integration
 
 ```
-search @twitter
-  login = [#login username password]
+search @twitter @session
+  login = [#login username password time]
+  [#time timestamp]
+  timestamp - time > 1000 // Validate after 1s
   
 commit @twitter
   login += #success
@@ -553,7 +605,7 @@ Get the response from twitter, and modify our internal twitter record
 
 ```
 search @twitter
-  [#login #success]
+  [#login #success username password]
   
 search
   integration = [#integration #pending name: "twitter"]
@@ -563,8 +615,16 @@ commit
   integration -= #pending
   integration += #enabled
   app.page := "settings"
+
 ```
 
+```
+search
+  [#integration tag]
+  
+bind @browser
+  [#div text: "tag: {{tag}}"]
+```
 
 ## Cashier
 
@@ -736,13 +796,13 @@ commit
 ```
 
 # Components
-
 ## App Wrapper
 ### Page Template
 
 ```
 search
-  [#app page]
+  app = [#app page]
+  
 bind @browser
   [#div #app-wrapper class: "app-wrapper" children:
     [#div #page-wrapper class: "page-wrapper" page]
@@ -755,6 +815,7 @@ Display a list of pages to switch between. In the actual application this will o
 ```
 search @browser
   wrapper = [#nav-panel]
+  
 bind @browser
   wrapper <- [#div class:"nav-panel" children:
     [#div #nav-btn page:"homepage" text:"Home"]
@@ -767,13 +828,13 @@ bind @browser
 
 Change the current page in response to a click.
 
-```
+```eve
 search @browser @event @session
   view = [#app]
   click = [#click element:[#nav-btn page]]
+  
 commit
   view.page := page
-
 ```
 
 ```css
