@@ -31,7 +31,7 @@ search @browser
    wrapper = [#page-wrapper page:"homepage"]
   
 search
-   item = [#menu name image cost]
+   item = [#menu not(#disabled) name image cost]
 
 bind @browser
   wrapper <- [children:
@@ -322,6 +322,42 @@ bind @browser
 - Swipe left to turn item off
 - Swipe right to turn item on
 - Clicking brings up item listing overlay
+
+```
+search @browser
+  wrapper = [#page-wrapper page: "owner"]
+
+search
+   item = [#menu name image cost]
+  
+bind @browser
+  wrapper <- [children:
+  [#div style: [padding: 10] children:
+    [#div #social-btn class: "btn bubbly" text: "Social Media"]
+    [#editable class: "ion-android-search btn bubbly" default: "Enter your address"]]
+  
+  [#div class: "flex-row" style: [padding: "10 20" background: "#EEE"] children:
+    [#div class: "ion-arrow-left-c btn-icon-start" text: "off"]
+    [#div class: "flex-spacer" style: [text-align: "center"] text: "menu"]
+    [#div class: "ion-arrow-right-c btn-icon-end" text: "on"]]
+  
+   [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
+     children:
+       [#menu-item #toggleable item]]]
+```
+
+Open the social flow when the owner clicks the social button.
+
+```
+search @event @browser
+  [#click element: [#social-btn]]
+  
+search
+  app = [#app]
+  
+commit
+  app.page := "social-flow"
+```
 
 ### Item Listing
 - Draw item photo
@@ -690,7 +726,7 @@ commit
 
 ```
 commit
-   [#menu name:"Bacon Swiss Burger"
+   [#menu name:"Bacon Swiss Burger" #disabled
     image:"assets/burger.jpg"
     description:"A half pound Niman Ranch burger with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
     cost:12]
@@ -775,7 +811,8 @@ bind @browser
     [#div #nav-btn page:"checkout" text: "Checkout"]
     [#div #nav-btn page:"user-queue" text:"User Queue"]
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
-    [#div #nav-btn page:"settings" text:"Truck Settings"]]
+    [#div #nav-btn page:"settings" text:"Truck Settings"]
+    [#div #nav-btn page:"owner" text:"Owner"]]
 ```
 
 Highlight the currently active page.
@@ -854,9 +891,10 @@ search @browser
 
 search
   item = [#menu name image cost]
+  disabled? = if item = [#disabled] then true else false
 
 bind @browser
-  menu-item <- [#div class: "menu-item" children:
+  menu-item <- [#div class: "menu-item" class: [disabled: disabled?] children:
     [#div class: "item-image" style: [background-image: "url({{image}})"]]
     [#div #menu-item-text item class: "item-text" | mode children:
       [#div class: "item-name" text: name]]
@@ -959,7 +997,30 @@ bind @browser
   menu-item.children += [#div #remove-item-btn sort: -1 item class: "btn ion-minus-round" class: [disabled: is(count = 0)] style: [margin-left: -10 margin-right: 10]]
 ```
 
+### Toggleable
+Add event hooks for enabling/disabling menu items.
 
+```
+search @event @browser
+  [#click element: [#menu-item #toggleable item]]
+
+search
+  item = [#disabled]
+  
+commit
+  item -= #disabled
+```
+
+```
+search @event @browser
+  [#click element: [#menu-item #toggleable item]]
+
+search
+  item = [not(#disabled)]
+  
+commit
+  item += #disabled
+```
 
 ### Styles
 Since the style differences for individual modes are so small, they've all been inlined.
@@ -1034,6 +1095,9 @@ Since the style differences for individual modes are so small, they've all been 
 .menu-item:hover { background: #F3F3F3; }
 .menu-item:active { background: #E9E9E9; }
 
+.menu-item.disabled { background: #DDD; opacity: 0.75; }
+.menu-item.disabled .item-image { filter: saturate(25%); }
+
 .menu-item .item-image {
   align-self: stretch;
   flex: 0 0 90px;
@@ -1092,6 +1156,15 @@ Since the style differences for individual modes are so small, they've all been 
 .btn:hover { background: #F3F3F3; }
 .btn:active { background: #E9E9E9; }
 .btn.disabled { color: #999; }
+
+.btn:before { padding-right: 10; }
+.btn-icon-start:before { padding-right: 10; }
+.btn-icon-end:before { position: relative; left: 100%; padding-right: 0; padding-left: 10;}
+
+.btn.bubbly { position: relative; justify-content: center; flex: 1; border: 1px solid rgba(0, 0, 0, 0.2); border-radius: 8px; }
+.btn.bubbly > input { background: transparent; border: none; }
+.btn.bubbly:before { position: absolute; left: 10; }
+.btn.bubbly + .btn.bubbly { margin-top: 10; }
 ```
 
 ## Editable
@@ -1128,6 +1201,7 @@ search @event @browser
   
 commit @browser
   element += #editing
+  element.class += "editing"
 ```
 
 `#editables` in editing mode have an #input instead of a #div
