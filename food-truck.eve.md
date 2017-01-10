@@ -31,7 +31,7 @@ search @browser
    wrapper = [#page-wrapper page:"homepage"]
   
 search
-   item = [#menu name image cost]
+   item = [#menu not(#disabled) name image cost]
 
 bind @browser
   wrapper <- [children:
@@ -714,7 +714,7 @@ commit
 
 ```
 commit
-   [#menu name:"Bacon Swiss Burger"
+   [#menu name:"Bacon Swiss Burger" #disabled
     image:"assets/burger.jpg"
     description:"A half pound Niman Ranch burger with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
     cost:12]
@@ -879,9 +879,10 @@ search @browser
 
 search
   item = [#menu name image cost]
+  disabled? = if item = [#disabled] then true else false
 
 bind @browser
-  menu-item <- [#div class: "menu-item" children:
+  menu-item <- [#div class: "menu-item" class: [disabled: disabled?] children:
     [#div class: "item-image" style: [background-image: "url({{image}})"]]
     [#div #menu-item-text item class: "item-text" | mode children:
       [#div class: "item-name" text: name]]
@@ -1058,6 +1059,9 @@ Since the style differences for individual modes are so small, they've all been 
 
 .menu-item:hover { background: #F3F3F3; }
 .menu-item:active { background: #E9E9E9; }
+
+.menu-item.disabled { background: #DDD; opacity: 0.75; }
+.menu-item.disabled .item-image { filter: saturate(25%); }
 
 .menu-item .item-image {
   align-self: stretch;
