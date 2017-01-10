@@ -343,7 +343,7 @@ bind @browser
   
    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [#menu-item #description item]]
+       [#menu-item #toggleable item]]
   ]
 ```
 
@@ -985,7 +985,30 @@ bind @browser
   menu-item.children += [#div #remove-item-btn sort: -1 item class: "btn ion-minus-round" class: [disabled: is(count = 0)] style: [margin-left: -10 margin-right: 10]]
 ```
 
+### Toggleable
+Add event hooks for enabling/disabling menu items.
 
+```
+search @event @browser
+  [#click element: [#menu-item #toggleable item]]
+
+search
+  item = [#disabled]
+  
+commit
+  item -= #disabled
+```
+
+```
+search @event @browser
+  [#click element: [#menu-item #toggleable item]]
+
+search
+  item = [not(#disabled)]
+  
+commit
+  item += #disabled
+```
 
 ### Styles
 Since the style differences for individual modes are so small, they've all been inlined.
