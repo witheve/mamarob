@@ -393,7 +393,17 @@ search @browser
 
 bind @browser
   wrapper <- [children:
-    [#div text: "yo"]]
+    [#div class: "flex-row" children:
+      [#img #item-image style: [min-width: 120 min-height: 80 background: "#DDD"]]
+      [#editable class: "flex-spacer" style: [padding: "0 20"] default: "name"]
+      [#div class: "btn ion-checkmark"]]
+    
+    [#div class: "flex-row" children:
+      [#div children:
+        [#editable default: "description"]
+        [#editable default: "price"]]
+  
+      [#food-flags #toggleable]]]
 ```
 
 ### Social Media
