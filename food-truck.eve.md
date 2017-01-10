@@ -387,6 +387,15 @@ commit
 - If name and price forms both have information, commit contents of all 3 forms plus 3 health icons to item listing
 - If either name or price forms do not have information, pop up an error message saying “You’re missing a name/price!” with an OK button to revert to item listing
 
+```
+search @browser
+  wrapper = [#page-wrapper page: "edit-item"]
+
+bind @browser
+  wrapper <- [children:
+    [#div text: "yo"]]
+```
+
 ### Social Media
 - Draw top banner
 - Draw truck name
@@ -812,7 +821,8 @@ bind @browser
     [#div #nav-btn page:"user-queue" text:"User Queue"]
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
     [#div #nav-btn page:"settings" text:"Truck Settings"]
-    [#div #nav-btn page:"owner" text:"Owner"]]
+    [#div #nav-btn page:"owner" text:"Owner"]
+    [#div #nav-btn page: "edit-item" text: "Edit Item"]]
 ```
 
 Highlight the currently active page.
