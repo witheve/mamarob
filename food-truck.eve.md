@@ -333,7 +333,7 @@ search
 bind @browser
   wrapper <- [children:
   [#div style: [padding: 10] children:
-    [#div class: "btn bubbly" text: "Social Media"]
+    [#div #social-btn class: "btn bubbly" text: "Social Media"]
     [#editable class: "ion-android-search btn bubbly" default: "Enter your address"]]
   
   [#div class: "flex-row" style: [padding: "10 20" background: "#EEE"] children:
@@ -343,8 +343,20 @@ bind @browser
   
    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [#menu-item #toggleable item]]
-  ]
+       [#menu-item #toggleable item]]]
+```
+
+Open the social flow when the owner clicks the social button.
+
+```
+search @event @browser
+  [#click element: [#social-btn]]
+  
+search
+  app = [#app]
+  
+commit
+  app.page := "social-flow"
 ```
 
 ### Item Listing
