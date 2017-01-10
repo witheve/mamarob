@@ -326,10 +326,24 @@ bind @browser
 ```
 search @browser
   wrapper = [#page-wrapper page: "owner"]
+
+search
+   item = [#menu name image cost]
   
 bind @browser
   wrapper <- [children:
-  [#div text: "hi"]
+  [#div style: [padding: 10] children:
+    [#div class: "btn bubbly" text: "Social Media"]
+    [#editable class: "ion-android-search btn bubbly" default: "Enter your address"]]
+  
+  [#div class: "flex-row" style: [padding: "10 20" background: "#EEE"] children:
+    [#div class: "ion-arrow-left-c btn-icon-start" text: "off"]
+    [#div class: "flex-spacer" style: [text-align: "center"] text: "menu"]
+    [#div class: "ion-arrow-right-c btn-icon-end" text: "on"]]
+  
+   [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
+     children:
+       [#menu-item #description item]]
   ]
 ```
 
@@ -1103,6 +1117,15 @@ Since the style differences for individual modes are so small, they've all been 
 .btn:hover { background: #F3F3F3; }
 .btn:active { background: #E9E9E9; }
 .btn.disabled { color: #999; }
+
+.btn:before { padding-right: 10; }
+.btn-icon-start:before { padding-right: 10; }
+.btn-icon-end:before { position: relative; left: 100%; padding-right: 0; padding-left: 10;}
+
+.btn.bubbly { position: relative; justify-content: center; flex: 1; border: 1px solid rgba(0, 0, 0, 0.2); border-radius: 8px; }
+.btn.bubbly > input { background: transparent; border: none; }
+.btn.bubbly:before { position: absolute; left: 10; }
+.btn.bubbly + .btn.bubbly { margin-top: 10; }
 ```
 
 ## Editable
@@ -1139,6 +1162,7 @@ search @event @browser
   
 commit @browser
   element += #editing
+  element.class += "editing"
 ```
 
 `#editables` in editing mode have an #input instead of a #div
