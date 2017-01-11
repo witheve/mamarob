@@ -1102,7 +1102,7 @@ Add an item to the current order.
 @TODO: Support touch gestures.
 ```
 search @browser @event @session
-  [#app page:"homepage" order]
+  [#app order]
   [#click element:[#menu-item #buyable item]]
   not([#click element:[#remove-item-btn]])
   count = if [#order-item order item count:c] then c + 1 else 1
@@ -1115,7 +1115,7 @@ Remove an item from the current order.
 @TODO: Support touch gestures.
 ```
 search @browser @event @session
-  [#app page:"homepage" order]
+  [#app order]
   [#click element:[#remove-item-btn item]]
   [#menu-item #buyable item]
 
