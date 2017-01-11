@@ -403,13 +403,13 @@ bind @browser
   wrapper <- [children:
     [#div class: "item-top-bar" children:
       [#img src: image style: [height: "100%" background: "#DDD"]]
-      [#editable class: "item-name" default: "name" value: name]
-      [#div class: "btn submit-btn ion-checkmark"]]
+      [#editable form: "edit-item" field: "name" class: "item-name" default: "name" value: name]
+      [#div #submit-form form: "edit-item" item class: "btn submit-btn ion-checkmark"]]
     
     [#div class: "item-bottom-bar" children:
       [#div style: [flex: 1] children:
-        [#editable class: "btn bubbly item-description" default: "description" value: description]
-        [#editable class: "btn bubbly item-price" default: "price" value: cost]]
+        [#editable form: "edit-item" field: "description" class: "btn bubbly item-description" default: "description" value: description]
+        [#editable form: "edit-item" field: "cost" class: "btn bubbly item-price" default: "price" value: cost]]
   
       [#food-flags #toggleable item]]]
 ```
@@ -424,6 +424,22 @@ commit
   app.page := "owner"
 ```
 
+When the submit button is clicked, save the current form state to the item, then clear it.
+
+```
+search @event @browser
+  [#click element: [#submit-form form item]]
+  form-elem = [#editable form field value]
+  
+search
+  app = [#app]
+
+commit
+  lookup[record: item attribute: field] := none
+  lookup[record: item attribute: field value]
+  app.page := "owner"
+  app.current-item := none
+```
 
 ```css
 
