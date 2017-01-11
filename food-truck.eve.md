@@ -459,7 +459,8 @@ commit
 ```
 
 ```css
-
+.edit-item { display: flex; flex-direction: column; }
+  
 .edit-item .item-top-bar {
   position: relative;
   display: flex;
@@ -493,7 +494,7 @@ commit
   margin-top: 10;
 }
 
-.edit-item .item-delete-btn { display: flex; flex: 0 0 auto; padding-right: 20; }
+.edit-item .item-delete-btn { display: flex; flex: 0 0 auto; padding-right: 20; padding-bottom: 30;}
 
 ```
 
