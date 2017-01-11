@@ -406,12 +406,15 @@ bind @browser
       [#editable form: "edit-item" field: "name" class: "item-name" default: "name" value: name]
       [#div #submit-form form: "edit-item" item class: "btn submit-btn ion-checkmark"]]
     
-    [#div class: "item-bottom-bar" children:
+    [#div class: "item-middle-bar" children:
       [#div style: [flex: 1] children:
         [#editable form: "edit-item" field: "description" class: "btn bubbly item-description" default: "description" value: description]
         [#editable form: "edit-item" field: "cost" class: "btn bubbly item-price" default: "price" value: cost]]
   
-      [#food-flags #toggleable item]]]
+      [#food-flags #toggleable item]]
+    [#div class: "flex-spacer"]
+    [#div class: "item-bottom-bar" children:
+      [#div #delete-item-btn item class: "btn item-delete-btn ion-trash-a"]]]
 ```
 
 When there isn't a current-item, redirect to the owner page.
@@ -441,6 +444,20 @@ commit
   app.current-item := none
 ```
 
+When the delete button is clicked, remove the current item from the menu.
+
+```
+search @event @browser
+  [#click element: [#delete-item-btn item]]
+  
+search
+  app = [#app]
+  
+commit
+  item := none
+  app.page := "owner"
+```
+
 ```css
 
 .edit-item .item-top-bar {
@@ -458,7 +475,7 @@ commit
 
 .edit-item .submit-btn { position: absolute; right: 0; top: 0; padding-top: 30; padding-right: 20; }
 
-.edit-item .item-bottom-bar {
+.edit-item .item-middle-bar {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
@@ -469,9 +486,14 @@ commit
 .edit-item .item-price { width: 5em; justify-content: flex-start !important; padding-left: 20; }
 .edit-item .item-price:before { display: block; content: "$" }
 
-z {
+.edit-item .item-bottom-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-top: 10;
 }
 
+.edit-item .item-delete-btn { display: flex; flex: 0 0 auto; padding-right: 20; }
 
 ```
 
