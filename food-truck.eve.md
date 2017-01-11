@@ -744,6 +744,47 @@ commit
 - Draw pay button
 - Clicking pay button takes you to the Stripe payment page/overlay
 
+```
+search @browser
+  wrapper = [#page-wrapper page: "cashier-order"]
+
+search
+  item = [#menu not(#disabled) name image cost]
+  
+bind @browser
+  wrapper.class += "cashier-order"
+  wrapper <- [children:
+    [#header class: "flex-row" style: [flex: "0 0 auto"] children:
+      [#h1 text: "Mama Rob's"]
+      [#div class: "flex-spacer"]
+      [#div #menu-btn class: "ion-navicon-round btn menu-btn"]]
+  
+    [#div class: "menu-items" children:
+      [#menu-item #buyable item]]
+  
+    [#div class: "flex-spacer"]
+    [#div class: "cashier-bottom-bar" children:
+      [#div #finalize-order-btn class: "btn bubbly finalize-btn" text: "finalize order"]]]
+```
+
+
+
+```css
+
+.cashier-order { display: flex; flex-direction: column; }
+  
+.cashier-order header { border-bottom: 1px solid #DDD; box-shadow: 0 6px 6px -3px white; z-index: 1; }
+
+.cashier-order h1 { margin: 20; margin-bottom: 0; }
+
+.cashier-order .menu-btn { align-self: flex-start; padding: 20;  font-size: 2em; }
+
+.cashier-order .menu-items { position: relative; overflow-y: auto; }
+
+.cashier-order .cashier-bottom-bar { padding: 10 80; border-top: 1px solid #DDD; box-shadow: 0 -6px 6px -3px white; z-index: 1; }
+
+```
+
 ### Stripe Page
 - Draw email field
 - Draw CC number field
@@ -924,7 +965,8 @@ bind @browser
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
     [#div #nav-btn page:"settings" text:"Truck Settings"]
     [#div #nav-btn page:"owner" text:"Owner"]
-    [#div #nav-btn page: "edit-item" text: "Edit Item"]]
+    [#div #nav-btn page: "edit-item" text: "Edit Item"]
+    [#div #nav-btn page: "cashier-order" text: "Cashier"]]
 ```
 
 Highlight the currently active page.
@@ -1216,7 +1258,7 @@ Since the style differences for individual modes are so small, they've all been 
   position: relative;
   padding: 10 20;
   min-height: 80;
-  background: white;
+  background: transparent;
 }
 
 .menu-item:hover { background: #F3F3F3; }
