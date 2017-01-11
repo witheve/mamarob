@@ -343,7 +343,7 @@ bind @browser
   
    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [#menu-item #toggleable item]]]
+       [#menu-item #toggleable #modifiable item]]]
 ```
 
 Open the social flow when the owner clicks the social button.
@@ -390,20 +390,73 @@ commit
 ```
 search @browser
   wrapper = [#page-wrapper page: "edit-item"]
+  
+search
+  [#app current-item: item]
+  name = if item.name then item.name else ""
+  image = if item.image then item.image else ""
+  cost = if item.cost then item.cost else 0
+  description = if item.description then item.description else ""
 
 bind @browser
+  wrapper.class += "edit-item"
   wrapper <- [children:
-    [#div class: "flex-row" children:
-      [#img #item-image style: [min-width: 120 min-height: 80 background: "#DDD"]]
-      [#editable class: "flex-spacer" style: [padding: "0 20"] default: "name"]
-      [#div class: "btn ion-checkmark"]]
+    [#div class: "item-top-bar" children:
+      [#img src: image style: [height: "100%" background: "#DDD"]]
+      [#editable class: "item-name" default: "name" value: name]
+      [#div class: "btn submit-btn ion-checkmark"]]
     
-    [#div class: "flex-row" children:
-      [#div children:
-        [#editable default: "description"]
-        [#editable default: "price"]]
+    [#div class: "item-bottom-bar" children:
+      [#div style: [flex: 1] children:
+        [#editable class: "btn bubbly item-description" default: "description" value: description]
+        [#editable class: "btn bubbly item-price" default: "price" value: cost]]
   
-      [#food-flags #toggleable]]]
+      [#food-flags #toggleable item]]]
+```
+
+When there isn't a current-item, redirect to the owner page.
+
+```
+search
+  app = [#app page: "edit-item" not(current-item)]
+  
+commit
+  app.page := "owner"
+```
+
+
+```css
+
+.edit-item .item-top-bar {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  height: 140;
+  padding: 20;
+}
+
+.edit-item .item-top-bar > img { border-radius: 6px; }
+
+.edit-item .item-name { flex: 1; padding: 0 20; font-size: 1.5em; }
+
+.edit-item .submit-btn { position: absolute; right: 0; top: 0; padding-top: 30; padding-right: 20; }
+
+.edit-item .item-bottom-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 0 20;
+}
+
+.edit-item .item-description { height: 5em; justify-content: flex-start !important; }
+.edit-item .item-price { width: 5em; justify-content: flex-start !important; padding-left: 20; }
+.edit-item .item-price:before { display: block; content: "$" }
+
+z {
+}
+
+
 ```
 
 ### Social Media
@@ -1042,6 +1095,21 @@ commit
   item += #disabled
 ```
 
+### Modifiable
+Modifiable items may be double-clicked to access the edit-item page for that item.
+
+```
+search @event @browser
+  [#double-click element: [#menu-item #modifiable item]]
+  
+search
+  app = [#app]
+  
+commit
+  app.page := "edit-item"
+  app.current-item := item
+```
+
 ### Styles
 Since the style differences for individual modes are so small, they've all been inlined.
 
@@ -1166,6 +1234,90 @@ Since the style differences for individual modes are so small, they've all been 
   background: rgba(255, 255, 255, 1);
   text-align: center;
 }
+```
+
+## Food Flags
+The food flags component is a toggle list of additional information about the item.
+
+### Flags
+Available flags in in the system.
+
+```
+commit
+  [#food-flag flag: "vegetarian" name: "V" icon: "ion-leaf"]
+  [#food-flag flag: "gluten free" name: "GF"]
+  [#food-flag flag: "spicy" name: "SPICY"]
+```
+
+Ensure every item has a flags object.
+
+```
+search
+  item = [#menu not(flags)]
+
+commit
+  item.flags := []
+```
+
+Draw the food flags selector for an item
+
+```
+search @browser
+  wrapper = [#food-flags item]
+  toggleable? = if wrapper = [#toggleable] then true else false
+  
+search
+  flag-entry = [#food-flag flag name]
+  icon = if flag-entry.icon then flag-entry.icon else ""
+  active? = if lookup[record: item.flags attribute: flag value: true] then true 
+  else if toggleable? then false
+  // If the food flags aren't toggleable, there's no reason to show inactive flags.
+  
+bind @browser  
+  wrapper <- [#div class: "food-flags" children:
+  [#div #food-flag class: "btn bubbly food-flag {{icon}}" class: [active: active?] flag item text: name]]
+```
+
+Toggleable food flags change the items flagged state on click.
+
+```
+search @event @browser
+  [#click element: [#food-flag flag item]]
+  
+search
+  lookup[record: item.flags attribute: flag value: true]
+  
+commit
+  lookup[record: item.flags attribute: flag value: false]
+  lookup[record: item.flags attribute: flag] := none
+  
+commit @browser
+  [#div text: "{{item}} {{flag}} false"]
+```
+
+```
+search @event @browser
+  [#click element: [#food-flag flag item]]
+  
+search
+  not(lookup[record: item.flags attribute: flag value: true])
+  
+commit
+  lookup[record: item.flags attribute: flag value: true]
+  lookup[record: item.flags attribute: flag] := none
+    
+commit @browser
+  [#div text: "{{item}} {{flag}} true"]
+```
+
+### Styles
+
+```css
+
+.food-flags { margin-left: 20; }
+.food-flags .food-flag { padding: 20;  }
+.food-flag.active { background: #DDFFDD; border-color: #99FF99; }
+
 ```
 
 ## Button
