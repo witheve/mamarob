@@ -15,7 +15,7 @@ should include title art
 - Draw the hero image
 - Draw the title text on top of the image
 - Draw the food truck description
-we can add the additional imagery to the page if provided
+we can add the additional imagery to the page if provided.
 - Draw the Location box
 - Draw “Location today:” text
 - Draw the minimap
@@ -744,6 +744,47 @@ commit
 - Draw pay button
 - Clicking pay button takes you to the Stripe payment page/overlay
 
+```
+search @browser
+  wrapper = [#page-wrapper page: "cashier-order"]
+
+search
+  item = [#menu not(#disabled) name image cost]
+  
+bind @browser
+  wrapper.class += "cashier-order"
+  wrapper <- [children:
+    [#header class: "flex-row" style: [flex: "0 0 auto"] children:
+      [#h1 text: "Mama Rob's"]
+      [#div class: "flex-spacer"]
+      [#employee-menu]]
+  
+    [#div class: "menu-items" children:
+      [#menu-item #buyable item]]
+  
+    [#div class: "flex-spacer"]
+    [#div class: "cashier-bottom-bar" children:
+      [#div #finalize-order-btn class: "btn bubbly finalize-btn" text: "finalize order"]]]
+```
+
+
+
+```css
+
+.cashier-order { display: flex; flex-direction: column; }
+  
+.cashier-order header { border-bottom: 1px solid #DDD; box-shadow: 0 6px 6px -3px white; z-index: 1; }
+
+.cashier-order h1 { margin: 20; margin-bottom: 0; }
+
+.cashier-order .menu-btn { align-self: flex-start; padding: 20;  font-size: 2em; }
+
+.cashier-order .menu-items { position: relative; overflow-y: auto; }
+
+.cashier-order .cashier-bottom-bar { padding: 10 80; border-top: 1px solid #DDD; box-shadow: 0 -6px 6px -3px white; z-index: 1; }
+
+```
+
 ### Stripe Page
 - Draw email field
 - Draw CC number field
@@ -924,7 +965,8 @@ bind @browser
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
     [#div #nav-btn page:"settings" text:"Truck Settings"]
     [#div #nav-btn page:"owner" text:"Owner"]
-    [#div #nav-btn page: "edit-item" text: "Edit Item"]]
+    [#div #nav-btn page: "edit-item" text: "Edit Item"]
+    [#div #nav-btn page: "cashier-order" text: "Cashier"]]
 ```
 
 Highlight the currently active page.
@@ -987,6 +1029,109 @@ commit
   padding: 0px 8px 0px;
 }
 
+```
+
+## Employee Menu
+
+Just draw a hamburger icon when the menu is closed.
+
+```
+search @browser
+  wrapper = [#employee-menu]
+  
+bind @browser
+  wrapper <- [#div class: "employee-menu" children:
+    [#div #employee-menu-btn menu: wrapper class: "ion-navicon-round btn menu-btn"]]
+```
+
+When the menu is open, draw a dropdown under the icon.
+
+```
+search @browser
+  wrapper = [#employee-menu open: true]
+  
+search
+  open = if [#app truck-open:true] then true else false
+  
+bind @browser
+  wrapper.children += [#div class: "menu-pane" sort: 3 children:
+  [#div #truck-open-btn menu: wrapper class: "btn bubbly" class: "truck-open-btn" open]
+  [#div #nav-btn class: "btn" text: "Owner" page: "owner"]
+  [#div #nav-btn class: "btn" text: "Truck Settings" page: "settings"]
+  [#div #nav-btn class: "btn" text: "Cashier" page: "cashier-order"]
+  [#div #nav-btn class: "btn" text: "Queue" page: "order-queue"]
+  ]
+```
+
+### Toggle dropdown
+
+```
+search @event @browser
+  [#click element: [#employee-menu-btn menu]]
+  
+  open? = if menu.open = true then false
+          else true
+
+commit @browser
+  menu.open := open?
+```
+
+If there's a click that isn't somewhere within an open menu, close it.
+
+```
+search @event @browser
+  [#click]
+  menu = [#employee-menu open: true]
+  not([#click element: menu])
+  
+commit @browser
+  menu.open := none
+```
+
+If we navigate away from an open menu, close it.
+
+```
+search @event @browser
+  [#click element: [#nav-btn]]
+  menu = [#employee-menu open: true]
+  
+commit @browser
+  menu.open := none
+```
+
+### Toggle Open
+
+```
+search @event @browser
+  [#click element: [#truck-open-btn]]
+  
+search
+  app = [#app]
+  open = if app.truck-open = true then false else true
+  
+commit
+  app.truck-open := open
+```
+
+### Styles
+
+```css
+
+.employee-menu { display: flex; flex-direction: column; position: relative; }
+
+.employee-menu .menu-pane { position: absolute; top: 100%; right: 0; padding: 20; margin-top: -10; margin-right: 10; background: white; border: 1px solid #CCC; border-radius: 6px; white-space: pre;}
+  
+.employee-menu .truck-open-btn { height: 2em; }
+.employee-menu .truck-open-btn:before { align-self: center; }
+
+.employee-menu .truck-open-btn[open="true"]{ background: rgba(10, 255, 10, 0.5); }
+.employee-menu .truck-open-btn[open="true"]:before { content: "Open"; }
+
+.employee-menu .truck-open-btn[open="false"]{ background: rgba(255, 10, 10, 0.5); }
+.employee-menu .truck-open-btn[open="false"]:before { content: "Closed"; }
+
+
+  
 ```
 
 ## Menu Item
@@ -1060,7 +1205,7 @@ Add an item to the current order.
 @TODO: Support touch gestures.
 ```
 search @browser @event @session
-  [#app page:"homepage" order]
+  [#app order]
   [#click element:[#menu-item #buyable item]]
   not([#click element:[#remove-item-btn]])
   count = if [#order-item order item count:c] then c + 1 else 1
@@ -1073,7 +1218,7 @@ Remove an item from the current order.
 @TODO: Support touch gestures.
 ```
 search @browser @event @session
-  [#app page:"homepage" order]
+  [#app order]
   [#click element:[#remove-item-btn item]]
   [#menu-item #buyable item]
 
@@ -1216,7 +1361,7 @@ Since the style differences for individual modes are so small, they've all been 
   position: relative;
   padding: 10 20;
   min-height: 80;
-  background: white;
+  background: transparent;
 }
 
 .menu-item:hover { background: #F3F3F3; }
