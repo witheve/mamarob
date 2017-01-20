@@ -38,7 +38,7 @@ bind @browser
     // Hero
     [#div style: [
       height: 320
-      background-image: "url(https://goo.gl/j1Jpue)"
+      background-image: "url(http://i.imgur.com/1lcSHmQ.jpg)"
       background-size: "cover"]]
   
     // Location
@@ -517,18 +517,20 @@ search @browser @session
 
 bind @browser
   wrapper.children := [#div children:
-  	[#div #page-header children:
+  	[#div #page-header class: "banner" children:
   		[#editable #truck-name default: "Tap to name your truck"]
-      [#button #edit-truck-name text: "edit"]
-      [#button #to-home text: "home"]]
+      [#button #edit-truck-name class: "ion-edit"]
+      [#button #to-home class: "ion-home"]]
     [#div #page-body children:
       [#image-container #hero-pic prompt: "Tap to set your cover photo"]
       [#editable #truck-description default: "Tap to add a description"]
-      [#div text: "Integrations"]
+      [#h2 text: "Integrations"]
       [#div #integrations children:
   [#span #integration integration class: "ion-social-{{integration.name}}{{enabled?}}"]
       ]]]
+
 ```
+
 
 Save the name of the truck when the user sets it
 
