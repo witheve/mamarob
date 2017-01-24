@@ -29,7 +29,7 @@ Draw the homepage.
 ```eve
 search @browser
    wrapper = [#page-wrapper page:"homepage"]
-  
+
 search
    item = [#menu not(#disabled) name image cost]
 
@@ -40,14 +40,14 @@ bind @browser
       height: 320
       background-image: "url(https://goo.gl/j1Jpue)"
       background-size: "cover"]]
-  
+
     // Location
     [#div class: "flex-row" style: [align-items: "center" height: "5em" overflow: "hidden"  background: "#EEE"]
       children:
         [#h3 text: "Location Now:" style: [flex: "0 0 auto" padding: "0 20" margin: 0 font-size: "2em" font-weight: 200]]
         [#img #mapz src: "https://goo.gl/euvdoF"
           style: [flex: 1 background-size: "cover"]]]
-  
+
     // Menu
     [#div class: "flex-row" style: [position: "relative" justify-content: "center" align-items: "center"] children:
       [#h3 text: "Menu" style: [
@@ -59,7 +59,8 @@ bind @browser
       ]
     [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [#menu-item #description #buyable item]]]
+       [#menu-item #buyable #flags item
+       ]]]
 ```
 
 Draw the cart button.
@@ -69,7 +70,7 @@ search @browser
 
 bind @browser
   wrapper <- [#div class: "flex-row"
-    style: [flex: "0 0 auto" position: "absolute" width: 70 right: 0] 
+    style: [flex: "0 0 auto" position: "absolute" width: 70 right: 0]
     children:
       [#div #cart class: "btn" style: [
         height: 30 padding: "0 5"
@@ -81,7 +82,7 @@ Display a quantity badge on the shopping cart button.
 ```eve
 search @browser
   wrapper = [#cart-btn]
-  
+
 search
   [#app order]
   [#order-item order item count]
@@ -121,7 +122,7 @@ display the nav button, which is unconditional
 ```eve
 search @browser
   wrapper = [#page-wrapper page: "checkout"]
-  
+
 search
    [#app order]
 bind @browser
@@ -134,7 +135,7 @@ display the current order
 ```eve
 search @browser
   wrapper = [#page-wrapper page: "checkout"]
-  
+
 search
    [#app order]
    [#order-item order item count]
@@ -199,7 +200,7 @@ commit
 ```
 search @browser
   wrapper = [#page-wrapper page: "user-queue"]
-  
+
 search
   order = [#order #my-order number items status]
   (ahead, message, my-status) = if status:"ready" then ("Your order is ready!","","ready")
@@ -214,7 +215,18 @@ bind @browser
     [#div class:"my-order-number" text:"Order #{{number}}"]
     [#div class:"my-food" text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]
     [#div class:"spacer"]
-  [#div class:"back-btn" text:"❮ Back to Mama Rob's"]]
+  [#div #back-btn class:"back-btn" text:"❮ Back to Mama Rob's"]]
+
+
+```
+
+```
+search @browser @event @session
+  a = [#app page:"user-queue" order]
+  [#click element:[#back-btn]]
+
+commit
+  a.page := "homepage"
 ```
 
 ```css
@@ -225,7 +237,7 @@ bind @browser
   flex-direction: column;
   justify-content: flex-start;
 }
-  
+
 .my-order .order-confirmed {
   text-transform: uppercase;
   font-weight: bold;
@@ -296,6 +308,10 @@ bind @browser
   padding-top: 20px;
 }
 
+.my-order .back-btn:hover {
+  color: #0076ce;
+}
+
 ```
 
 ## Owner
@@ -329,18 +345,18 @@ search @browser
 
 search
    item = [#menu name image cost]
-  
+
 bind @browser
   wrapper <- [children:
   [#div style: [padding: 10] children:
     [#div #social-btn class: "btn bubbly" text: "Social Media"]
     [#editable class: "ion-android-search btn bubbly" default: "Enter your address"]]
-  
+
   [#div class: "flex-row" style: [padding: "10 20" background: "#EEE"] children:
     [#div class: "ion-arrow-left-c btn-icon-start" text: "off"]
     [#div class: "flex-spacer" style: [text-align: "center"] text: "menu"]
     [#div class: "ion-arrow-right-c btn-icon-end" text: "on"]]
-  
+
    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
        [#menu-item #toggleable #modifiable item]]]
@@ -351,10 +367,10 @@ Open the social flow when the owner clicks the social button.
 ```
 search @event @browser
   [#click element: [#social-btn]]
-  
+
 search
   app = [#app]
-  
+
 commit
   app.page := "social-flow"
 ```
@@ -390,7 +406,7 @@ commit
 ```
 search @browser
   wrapper = [#page-wrapper page: "edit-item"]
-  
+
 search
   [#app current-item: item]
   name = if item.name then item.name else ""
@@ -405,12 +421,12 @@ bind @browser
       [#img src: image style: [height: "100%" background: "#DDD"]]
       [#editable form: "edit-item" field: "name" class: "item-name" default: "name" value: name]
       [#div #submit-form form: "edit-item" item class: "btn submit-btn ion-checkmark"]]
-    
+
     [#div class: "item-middle-bar" children:
       [#div style: [flex: 1] children:
         [#editable form: "edit-item" field: "description" class: "btn bubbly item-description" default: "description" value: description]
         [#editable form: "edit-item" field: "cost" class: "btn bubbly item-price" default: "price" value: cost]]
-  
+
       [#food-flags #toggleable item]]
     [#div class: "flex-spacer"]
     [#div class: "item-bottom-bar" children:
@@ -422,7 +438,7 @@ When there isn't a current-item, redirect to the owner page.
 ```
 search
   app = [#app page: "edit-item" not(current-item)]
-  
+
 commit
   app.page := "owner"
 ```
@@ -433,7 +449,7 @@ When the submit button is clicked, save the current form state to the item, then
 search @event @browser
   [#click element: [#submit-form form item]]
   form-elem = [#editable form field value]
-  
+
 search
   app = [#app]
 
@@ -449,10 +465,10 @@ When the delete button is clicked, remove the current item from the menu.
 ```
 search @event @browser
   [#click element: [#delete-item-btn item]]
-  
+
 search
   app = [#app]
-  
+
 commit
   item := none
   app.page := "owner"
@@ -460,7 +476,7 @@ commit
 
 ```css
 .edit-item { display: flex; flex-direction: column; }
-  
+
 .edit-item .item-top-bar {
   position: relative;
   display: flex;
@@ -581,10 +597,10 @@ Save the name of the truck when the user sets it
 ```
 search @browser
   [#truck-name value]
-  
+
 search
   [#app #owner settings]
-  
+
 commit
   settings.truck-name := value
 ```
@@ -595,7 +611,7 @@ Put editable into editing mode when the button is clicked
 search @event @browser
   truck-name-editable = [#truck-name]
   [#click element: [#button #edit-truck-name]]
-  
+
 commit @browser
   truck-name-editable += #editing
 ```
@@ -605,10 +621,10 @@ Clicking the home button returns you to the home screen
 ```
 search
   app = [#app]
-  
+
 search @event @browser
   [#click element: [#button #to-home]]
-  
+
 commit
   app.page := "homepage"
 ```
@@ -621,7 +637,7 @@ search @browser
 
 search
   [#app #owner settings]
-  
+
 bind
   settings.truck-description := value
 
@@ -633,7 +649,7 @@ Clicking on an integration opens up a page to enter credentials.
 search @event @browser @session
   [#click element: [#integration integration]]
   app = [#app]
-  
+
 commit
   app.page := "integration setup"
   app.integration := integration
@@ -677,10 +693,10 @@ Clicking cancel goes back to the settings page
 ```
 search
   app = [#app]
-  
+
 search @event @browser
   [#click element: [#button #to-settings]]
-  
+
 commit
   app.page := "settings"
 ```
@@ -692,10 +708,10 @@ Send credentials
 ```
 search
   integration = [#integration name: "twitter" credentials: [username password]]
-  
+
 commit
   integration += #pending
-  
+
 commit @twitter
   [#login username password]
 ```
@@ -705,7 +721,7 @@ Handle login response from twitter. For now, just throw back a success. The foll
 ```
 search @twitter
   login = [#login username password]
-  
+
 commit @twitter
   login += #success
 ```
@@ -715,11 +731,11 @@ Get the response from twitter, and modify our internal twitter record
 ```
 search @twitter
   [#login #success]
-  
+
 search
   integration = [#integration #pending name: "twitter"]
   app = [#app]
-  
+
 commit
   integration -= #pending
   integration += #enabled
@@ -750,7 +766,7 @@ search @browser
 
 search
   item = [#menu not(#disabled) name image cost]
-  
+
 bind @browser
   wrapper.class += "cashier-order"
   wrapper <- [children:
@@ -758,10 +774,10 @@ bind @browser
       [#h1 text: "Mama Rob's"]
       [#div class: "flex-spacer"]
       [#employee-menu]]
-  
+
     [#div class: "menu-items" children:
       [#menu-item #buyable item]]
-  
+
     [#div class: "flex-spacer"]
     [#div class: "cashier-bottom-bar" children:
       [#div #finalize-order-btn class: "btn bubbly finalize-btn" text: "finalize order"]]]
@@ -772,7 +788,7 @@ bind @browser
 ```css
 
 .cashier-order { display: flex; flex-direction: column; }
-  
+
 .cashier-order header { border-bottom: 1px solid #DDD; box-shadow: 0 6px 6px -3px white; z-index: 1; }
 
 .cashier-order h1 { margin: 20; margin-bottom: 0; }
@@ -808,7 +824,7 @@ This block draws orders in the browser that have an order number, items in the o
 ```eve
 search @browser
   wrapper = [#page-wrapper page: "order-queue"]
-  
+
 search
   order = [#order number items status]
   status != "done"
@@ -826,6 +842,8 @@ bind @browser
 ```
 
 This block is some mocked up order data and will assuredly be replaced by the actual orders database once all the different parts of the app are integrated.
+
+# Sample Menu Data
 
 ```eve
 search
@@ -872,13 +890,11 @@ search @browser @event @session
               else if order.status = "ready" then "done"
 commit
     order.status := newstatus
+
 ```
-
-### Sample Menu Data
-
 ```
 commit
-   [#menu name:"Bacon Swiss Burger" #disabled
+   [#menu name:"Bacon Swiss Burger"
     image:"assets/burger.jpg"
     description:"A half pound Niman Ranch burger with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
     cost:12]
@@ -888,7 +904,8 @@ commit
     description:"Our totally vegan black bean and portabella mushroom burger on a gluten-free bun."
     cost:12
     #gluten-free
-    #vegetarian]
+    #vegetarian
+    |dietary:("v","gf","s")]
 
    [#menu name:"Chicken Salad Sandwich"
     image:"assets/sandwich.jpg"
@@ -974,10 +991,10 @@ Highlight the currently active page.
 ```
 search @browser
   nav-btn = [#nav-btn page]
-  
+
 search
   [#app page]
-  
+
 bind @browser
   nav-btn.style += [background: "#606060" color: "white"]
 ```
@@ -1010,7 +1027,7 @@ commit
   height: 768;
   overflow-y: auto;
 }
-  
+
 .nav-panel {
   display: flex;
   flex-direction: row;
@@ -1038,7 +1055,7 @@ Just draw a hamburger icon when the menu is closed.
 ```
 search @browser
   wrapper = [#employee-menu]
-  
+
 bind @browser
   wrapper <- [#div class: "employee-menu" children:
     [#div #employee-menu-btn menu: wrapper class: "ion-navicon-round btn menu-btn"]]
@@ -1049,10 +1066,10 @@ When the menu is open, draw a dropdown under the icon.
 ```
 search @browser
   wrapper = [#employee-menu open: true]
-  
+
 search
   open = if [#app truck-open:true] then true else false
-  
+
 bind @browser
   wrapper.children += [#div class: "menu-pane" sort: 3 children:
   [#div #truck-open-btn menu: wrapper class: "btn bubbly" class: "truck-open-btn" open]
@@ -1068,7 +1085,7 @@ bind @browser
 ```
 search @event @browser
   [#click element: [#employee-menu-btn menu]]
-  
+
   open? = if menu.open = true then false
           else true
 
@@ -1083,7 +1100,7 @@ search @event @browser
   [#click]
   menu = [#employee-menu open: true]
   not([#click element: menu])
-  
+
 commit @browser
   menu.open := none
 ```
@@ -1094,7 +1111,7 @@ If we navigate away from an open menu, close it.
 search @event @browser
   [#click element: [#nav-btn]]
   menu = [#employee-menu open: true]
-  
+
 commit @browser
   menu.open := none
 ```
@@ -1104,11 +1121,11 @@ commit @browser
 ```
 search @event @browser
   [#click element: [#truck-open-btn]]
-  
+
 search
   app = [#app]
   open = if app.truck-open = true then false else true
-  
+
 commit
   app.truck-open := open
 ```
@@ -1120,7 +1137,7 @@ commit
 .employee-menu { display: flex; flex-direction: column; position: relative; }
 
 .employee-menu .menu-pane { position: absolute; top: 100%; right: 0; padding: 20; margin-top: -10; margin-right: 10; background: white; border: 1px solid #CCC; border-radius: 6px; white-space: pre;}
-  
+
 .employee-menu .truck-open-btn { height: 2em; }
 .employee-menu .truck-open-btn:before { align-self: center; }
 
@@ -1131,7 +1148,7 @@ commit
 .employee-menu .truck-open-btn[open="false"]:before { content: "Closed"; }
 
 
-  
+
 ```
 
 ## Menu Item
@@ -1144,6 +1161,7 @@ search @browser
   mode = if menu-item = [#description] then "description"
          if menu-item = [#instructions] then "instructions"
          if menu-item = [#buyable] then "buyable"
+         if menu-item = [#flags] then "flags"
          else "normal"
 
 search
@@ -1170,8 +1188,10 @@ search
 
 bind @browser
   item-text.children += [#div sort: 2 class: "item-description" text: description]
+
 ```
 
+### 
 ### Instructions
 Adds a "special instructions" blurb.
 
@@ -1206,7 +1226,8 @@ Add an item to the current order.
 ```
 search @browser @event @session
   [#app order]
-  [#click element:[#menu-item #buyable item]]
+  [#click element:[#add-item-btn item]]
+  [#menu-item #buyable item]
   not([#click element:[#remove-item-btn]])
   count = if [#order-item order item count:c] then c + 1 else 1
 commit
@@ -1263,7 +1284,7 @@ search @event @browser
 
 search
   item = [#disabled]
-  
+
 commit
   item -= #disabled
 ```
@@ -1274,7 +1295,7 @@ search @event @browser
 
 search
   item = [not(#disabled)]
-  
+
 commit
   item += #disabled
 ```
@@ -1284,11 +1305,11 @@ Modifiable items may be double-clicked to access the edit-item page for that ite
 
 ```
 search @event @browser
-  [#double-click element: [#menu-item #modifiable item]]
-  
+  [#click element: [#menu-item #modifiable item]]
+
 search
   app = [#app]
-  
+
 commit
   app.page := "edit-item"
   app.current-item := item
@@ -1373,7 +1394,7 @@ Since the style differences for individual modes are so small, they've all been 
 .menu-item .item-image {
   align-self: stretch;
   flex: 0 0 90px;
-  max-height: 90px;
+  height: 90px;
   margin: 0;
   margin-right: 10;
   background-size: cover;
@@ -1430,7 +1451,7 @@ Available flags in in the system.
 commit
   [#food-flag flag: "vegetarian" name: "V" icon: "ion-leaf"]
   [#food-flag flag: "gluten free" name: "GF"]
-  [#food-flag flag: "spicy" name: "SPICY"]
+  [#food-flag flag: "spicy" name: "SPICY" icon: "ion-flame"]
 ```
 
 Ensure every item has a flags object.
@@ -1449,15 +1470,15 @@ Draw the food flags selector for an item
 search @browser
   wrapper = [#food-flags item]
   toggleable? = if wrapper = [#toggleable] then true else false
-  
+
 search
   flag-entry = [#food-flag flag name]
   icon = if flag-entry.icon then flag-entry.icon else ""
-  active? = if lookup[record: item.flags attribute: flag value: true] then true 
+  active? = if lookup[record: item.flags attribute: flag value: true] then true
   else if toggleable? then false
   // If the food flags aren't toggleable, there's no reason to show inactive flags.
-  
-bind @browser  
+
+bind @browser
   wrapper <- [#div class: "food-flags" children:
   [#div #food-flag class: "btn bubbly food-flag {{icon}}" class: [active: active?] flag item text: name]]
 ```
@@ -1467,14 +1488,14 @@ Toggleable food flags change the items flagged state on click.
 ```
 search @event @browser
   [#click element: [#food-flag flag item]]
-  
+
 search
   lookup[record: item.flags attribute: flag value: true]
-  
+
 commit
   lookup[record: item.flags attribute: flag value: false]
   lookup[record: item.flags attribute: flag] := none
-  
+
 commit @browser
   [#div text: "{{item}} {{flag}} false"]
 ```
@@ -1482,16 +1503,25 @@ commit @browser
 ```
 search @event @browser
   [#click element: [#food-flag flag item]]
-  
+
 search
   not(lookup[record: item.flags attribute: flag value: true])
-  
+
 commit
   lookup[record: item.flags attribute: flag value: true]
   lookup[record: item.flags attribute: flag] := none
-    
+
 commit @browser
   [#div text: "{{item}} {{flag}} true"]
+
+```
+
+```
+search @browser
+  home-food-flags = [#food-flags #display]
+
+bind @browser
+  home-food-flags.class += "display"
 ```
 
 ### Styles
@@ -1501,6 +1531,11 @@ commit @browser
 .food-flags { margin-left: 20; }
 .food-flags .food-flag { padding: 20;  }
 .food-flag.active { background: #DDFFDD; border-color: #99FF99; }
+
+.food-flags.display {
+  display: flex;
+  flex-direction: row;
+}
 
 ```
 
@@ -1530,7 +1565,7 @@ Every `#editable` is also a `#div`
 ```
 search @browser
   editable = [#editable]
-  
+
 bind @browser
   editable += #div
 ```
@@ -1543,7 +1578,7 @@ search @browser
   name = if editable.value = "" then default
          else if editable.value then editable.value
          else default
-           
+
 bind @browser
   editable.children := [#div text: name]
 ```
@@ -1554,7 +1589,7 @@ Clicking on an editable puts it in the #editing state, which renders an input bo
 search @event @browser
   [#click element]
   element = [#editable]
-  
+
 commit @browser
   element += #editing
   element.class += "editing"
@@ -1567,7 +1602,7 @@ search @browser
   editable = [#editable #editing]
   value = if editable.value then editable.value
           else ""
-          
+
 bind @browser
   editable.children := [#input value autofocus: true]
 ```
@@ -1580,7 +1615,7 @@ search @browser
 
 search @event
   event = [#keydown element: editable key: "enter"]
-  
+
 commit @browser
   editable -= #editing
   editable.value := value
@@ -1591,7 +1626,7 @@ commit @browser
 ```
 search @browser
   image-container = [#image-container]
-  
+
 bind @browser
   image-container += #div
 ```
@@ -1603,7 +1638,7 @@ search @browser
   image-container = [#image-container not(image)]
   prompt-text = if image-container.prompt then image-container.prompt
                 else "Choose an image"
-  
+
 bind @browser
   image-container.children := [#div text: prompt-text]
 ```
@@ -1616,7 +1651,7 @@ search @browser
 
 search @event
   event = [#click element: image-container]
-  
+
 commit @browser
   image-container += #editing
 
@@ -1627,7 +1662,7 @@ An #image-container in #editing mode displays options for uploading an image
 ```
 search @browser
   image-container = [#image-container #editing]
-  
+
 bind @browser
   image-container.children := [#input]
 ```
@@ -1637,10 +1672,10 @@ Enter a URL into the input box to display it
 ```
 search @browser
   image-container = [#image-container #editing children: [#input value]]
-  
+
 search @event
   [#keydown element: image-container, key: "enter"]
-  
+
 commit @browser
   image-container -= #editing
   image-container.image := value
