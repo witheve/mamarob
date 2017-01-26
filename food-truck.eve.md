@@ -8,6 +8,10 @@ empty order record.
   commit [#app page:"homepage" order:[]]
 ```
 
+```css
+{}
+```
+
 ### Website Home Page
 
 Draw the menu
@@ -38,7 +42,7 @@ bind @browser
     // Hero
     [#div style: [
       height: 320
-      background-image: "url(https://goo.gl/j1Jpue)"
+      background-image: "url(http://i.imgur.com/1lcSHmQ.jpg)"
       background-size: "cover"]]
 
     // Location
@@ -59,7 +63,7 @@ bind @browser
       ]
     [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [#menu-item #buyable #flags item
+       [#menu-item #flags #buyable item
        ]]]
 ```
 
@@ -104,9 +108,6 @@ commit
   a.page := "checkout"
 ```
 
-```css
-
-```
 
 ### Checkout Page
 
@@ -141,6 +142,7 @@ search
    [#order-item order item count]
    not (count = 0)
    total = sum[value: count * item.cost per:order given:item]
+
 bind @browser
    wrapper.children += [#div #checkout-container
      style:[flex-direction:"column" display:"flex"]
@@ -160,6 +162,14 @@ commit
    a.page := "homepage"
 ```
 
+Move from the checkout page to the Stripe page:
+```
+search @browser @event @session
+   a = [#app page:"checkout" order]
+   [#click element:[#order-button]]
+commit
+   a.page := "stripe"
+```
 
 ### Checkout Item Detail
 - Draw the item photo
@@ -177,17 +187,7 @@ commit
 - When clicked, apply any special instructions from the text form to the order
 - When clicked, update the quantity to whatever value is in the quantity text form
 
-### Stripe Page
-- Draw email field
-- Draw CC number field
-- Draw MM/YY field
-- Draw CVV field
-- Draw “Save with Stripe” checkbox
-- Draw “Confirm Order!” button
-- Confirming order processes payment
-- If payment succeeds, add the order from user cart into pending orders
-- Go to User Queue page
-- If payment fails, display error and stay on Stripe page
+
 
 ### User Queue Page
 - Draw “Order Confirmed!” text
@@ -207,18 +207,36 @@ search
     else if count[given: [#order status:"pending" number < order.number]] = 1 then ("1","order ahead of you!","ahead")
     else if ahead = count[given: [#order status:"pending" number < order.number]] then (ahead,"orders ahead of you!","ahead")
     else ("0","orders ahead of you!","ahead")
+
 bind @browser
   wrapper.children += [#div class:"my-order" children:
     [#div class:"order-confirmed" text:"Order confirmed!"]
     [#div class:my-status text:ahead]
     [#div class:"msg" text:message]
     [#div class:"my-order-number" text:"Order #{{number}}"]
-    [#div class:"my-food" text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]
+    [#div class:"my-food" text:"{{items.count}}x {{items.item.name}}"]
     [#div class:"spacer"]
   [#div #back-btn class:"back-btn" text:"❮ Back to Mama Rob's"]]
 
+```
+
+This block redirects the user back to the home page if they've haven't ordered yet.
 
 ```
+search @browser
+  wrapper = [#page-wrapper page: "user-queue"]
+
+search
+  not ([#order #my-order])
+
+bind @browser
+  wrapper.children += [#div class:"my-order" children:
+    [#div class:"order-confirmed" text:"Oops! Looks like you haven't ordered yet."]
+    [#div class:"spacer"]
+  [#div #back-btn class:"back-btn" text:"❮ Back to Mama Rob's"]]
+```
+
+This block lets you go back to the home page from the user queue page.
 
 ```
 search @browser @event @session
@@ -359,7 +377,11 @@ bind @browser
 
    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [#menu-item #toggleable #modifiable item]]]
+       [class:"owner-page-items" #menu-item #toggleable #modifiable #normal item]]]
+```
+
+```css
+
 ```
 
 Open the social flow when the owner clicks the social button.
@@ -461,6 +483,9 @@ commit
 ```
 
 When the delete button is clicked, remove the current item from the menu.
+
+
+
 
 ```
 search @event @browser
@@ -780,10 +805,20 @@ bind @browser
 
     [#div class: "flex-spacer"]
     [#div class: "cashier-bottom-bar" children:
-      [#div #finalize-order-btn class: "btn bubbly finalize-btn" text: "finalize order"]]]
+      [#div #finalize-order-btn class: "btn bubbly finalize-btn" text: "Finalize Order"]]]
 ```
 
-
+Move from the cashier page to the Stripe page:
+```
+search @browser @event @session
+  [#app order]
+  [#order-item order item count]
+  not (count = 0)
+  a = [#app page:"cashier-order" order]
+  [#click element:[#finalize-order-btn]]
+commit
+   a.page := "stripe"
+```
 
 ```css
 
@@ -800,16 +835,6 @@ bind @browser
 .cashier-order .cashier-bottom-bar { padding: 10 80; border-top: 1px solid #DDD; box-shadow: 0 -6px 6px -3px white; z-index: 1; }
 
 ```
-
-### Stripe Page
-- Draw email field
-- Draw CC number field
-- Draw MM/YY field
-- Draw CVV field
-- Draw “Confirm Order!” button
-- Confirming order processes payment
-- If payment succeeds, add the order from user cart into pending orders, clear the cart, and return to order screen
-- If payment fails, display error and stay on Stripe page
 
 ## The Pass
 
@@ -837,11 +862,155 @@ bind @browser
   wrapper.children += [#div sort:index class:("pending-order" order-style) #pending-order order children:
     [#div class:"order-number" text:number]
     [#div class:"order-items" children:
-        [#div text:"{{count[given: items, per: (order, items.item)]}}x {{items.item.name}}"]]
+        [#div text:"{{items.count}}x {{items.item.name}}"]]
     [#div class:(icon "order-status")]]
 ```
 
+```
+search @browser @event @session
+  [#click element:[#pending-order order]]
+  newstatus = if order.status = "pending" then "ready"
+              else if order.status = "ready" then "done"
+commit
+    order.status := newstatus
+```
+
 This block is some mocked up order data and will assuredly be replaced by the actual orders database once all the different parts of the app are integrated.
+
+## Stripe
+This block draws the Stripe page.
+
+```
+search @browser
+  wrapper = [#page-wrapper page: "stripe"]
+
+search
+   [#app order]
+   [#order-item order item count]
+   total = sum[value: count * item.cost per:order given:item]
+
+
+bind @browser
+  wrapper.children += [#div class:"stripe" children:
+    [#div class:"stripe-title" children:
+      [#img src:"http://i.imgur.com/QI1vh2o.jpg"]
+      [#div text:"Mama Rob's"]]
+    [#input class:"stripe-email" placeholder:"Email"]
+    [#div class:"payment-info" children:
+      [#input class:"stripe-card" placeholder:"Card Number"]
+      [#input class:"stripe-exp" placeholder:"MM/YY"]
+      [#input class:"stripe-cvc" placeholder:"CVC"]]
+    [#div class:"stripe-pay-btn" text:"Pay ${{total}}"]
+  ]
+```
+
+```
+search @browser @event @session
+  a = [#app page:"stripe" order]
+  [#click element:[class:"stripe-pay-btn"]]
+
+commit
+  a.page := "user-queue"
+```
+
+```css
+.stripe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stripe-title {
+  width: 100%;
+  background-color: #ecf0f2;
+  padding: 20px 20px;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.stripe-title img {
+  box-shadow: 0px 0px 10px 2px #15148d;
+  border-radius: 10px;
+  height: 80px;
+  float: left;
+  margin-right: 15px;
+}
+
+.stripe .stripe-email {
+  border: 1px solid #555555;
+  border-radius: 4px;
+  width: 60%;
+  margin-top: 40px;
+  font-size: 16px;
+  padding: 5px;
+}
+
+.stripe .payment-info {
+  margin: 20px 0px;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  width: 60%;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.stripe .stripe-card {
+  border: 0px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom: 1px solid #a9a9a9;
+  flex: 1 1 60%;
+  font-size: 16px;
+  padding: 5px;
+}
+
+.stripe .stripe-exp {
+  border: 0px;
+  border-bottom-left-radius: 4px;
+  border-right: 1px solid #a9a9a9;
+  flex: 0 0 30%;
+  font-size: 16px;
+  max-width: 50%;
+  padding: 5px;
+}
+
+.stripe .stripe-cvc {
+  border: 0px;
+  border-bottom-right-radius: 4px;
+  flex: 0 0 30%;
+  font-size: 16px;
+  max-width: 50%;
+  padding: 5px;
+}
+
+.stripe .stripe-pay-btn {
+  border: 1px solid #307ac5;
+  border-radius: 4px;
+  padding: 10px 50px;
+  background: linear-gradient(#46b1e5, #3099db);
+  color: white;
+}
+```
+
+This block commits the current cart to a new order record, which then appears in the Orders Pending Queue, and empties the cart to "reset" it.
+
+```
+search @browser @event @session
+  [#app order]
+  cart = [#order-item order item count]
+  count > 0
+  next-order = if c = count[given: [#order]] then c + 1
+               else 1
+  a = [#app page:"stripe" order]
+  [#click element:[class:"stripe-pay-btn"]]
+
+commit
+  [#order #my-order number:next-order status:"pending" items:
+    [#order-item item count]]
+  cart := none
+
+```
 
 # Sample Menu Data
 
@@ -852,106 +1021,90 @@ search
   burger = [#menu name:"Bacon Swiss Burger"]
   fries = [#menu name:"French Fries"]
 commit
-  [#order number:10 status:"pending" items:
-    [#order-item item:veggie]]
-  [#order number:11 status:"pending" items:
-    [#order-item item:veggie]
-    [#order-item item:fries]]
-  [#order number:12 status:"pending" items:
-    [#order-item item:veggie]
-    [#order-item item:fries]
-    [#order-item item:arnold]]
-  [#order number:13 status:"pending" items:
-    [#order-item item:burger]
-    [#order-item item:fries]]
-  [#order number:14 status:"pending" items:
-    [#order-item item:veggie]
-    [#order-item item:arnold]
-    [#order-item item:arnold]
-    [#order-item item:burger]
-    [#order-item item:burger]
-    [#order-item item:fries]]
-  [#order #my-order number:15 status:"pending" items:
-    [#order-item item:burger]
-    [#order-item item:fries]]
-  [#order number:16 status:"pending" items:
-    [#order-item item:burger]
-    [#order-item item:arnold]
-    [#order-item item:fries]]
+  [#order number:1 status:"pending" items:
+    [#order-item item:veggie count:1]]
+  [#order number:2 status:"pending" items:
+    [#order-item item:veggie count:1]
+    [#order-item item:fries count:1]]
+  [#order number:3 status:"pending" items:
+    [#order-item item:veggie count:1]
+    [#order-item item:fries count:1]
+    [#order-item item:arnold count:1]]
+  [#order number:4 status:"pending" items:
+    [#order-item item:burger count:1]
+    [#order-item item:fries count:1]]
+  [#order number:5 status:"pending" items:
+    [#order-item item:veggie count:1]
+    [#order-item item:arnold count: 2]
+    [#order-item item:burger count: 2]
+    [#order-item item:fries count:1]]
+  [#order number:6 status:"pending" items:
+    [#order-item item:burger count:1]
+    [#order-item item:fries count:1]]
+  [#order number:7 status:"pending" items:
+    [#order-item item:burger count:1]
+    [#order-item item:arnold count:1]
+    [#order-item item:fries count:1]]
 
 ```
 
 This block progresses the `status` of an order when the order is double clicked.
 
 ```
-search @browser @event @session
-  clicks = [#double-click element:[#pending-order order]]
-  newstatus = if order.status = "pending" then "ready"
-              else if order.status = "ready" then "done"
-commit
-    order.status := newstatus
-
-```
-```
 commit
    [#menu name:"Bacon Swiss Burger"
     image:"assets/burger.jpg"
     description:"A half pound Niman Ranch burger with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
-    cost:12]
+    cost:12.00]
 
    [#menu name:"Veggie Burger"
     image:"assets/veggieburger.jpg"
     description:"Our totally vegan black bean and portabella mushroom burger on a gluten-free bun."
-    cost:12
-    #gluten-free
-    #vegetarian
-    |dietary:("v","gf","s")]
+    cost:12.00
+    |dietary:("v", "gf")]
 
    [#menu name:"Chicken Salad Sandwich"
     image:"assets/sandwich.jpg"
     description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread."
-    cost:10]
+    cost:10.00]
 
    [#menu
     name:"Charbroiled Chicken Wings"
     image:"assets/chickwings.jpg"
     description:"Brined, coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy."
-    cost:10
-    #gluten-free
-    #spicy]
+    cost:10.00
+    |dietary:("spicy", "gf")]
 
 
    [#menu name:"French Fries"
     image:"assets/french-fries.jpg"
     description:"Hand-cut Kennebec fries with Cajun seasoning."
-    cost:5
-    #gluten-free
-    #vegetarian]
+    cost:5.00
+    |dietary:("v", "gf")]
 
 
    [#menu
     name:"Garlic Parmesan Mac & Cheese"
     image:"assets/mac-n-cheese.jpg"
     description:"Elbow pasta smothered with aged cheddar, fresh garlic, and parsley."
-    cost:10
-    #vegetarian]
+    cost:10.00
+    |dietary:("v")]
 
 
    [#menu
     name:"Gloria’s Beignets"
     image:"assets/fritters.jpg"
     description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey."
-    cost:6
-    #vegetarian]
+    cost:6.00
+    |dietary:("v")]
 
 
    [#menu
     name:"Arnold Palmer"
     image:"assets/drink.jpg"
     description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
-    cost:4
-    #gluten-free
-    #vegetarian]
+    cost:4.00
+    |dietary:("v", "gf")]
 ```
 
 # Components
@@ -978,6 +1131,7 @@ bind @browser
   wrapper <- [#div class:"nav-panel" children:
     [#div #nav-btn page:"homepage" text:"Home"]
     [#div #nav-btn page:"checkout" text: "Checkout"]
+    [#div #nav-btn page:"stripe" text: "Stripe"]
     [#div #nav-btn page:"user-queue" text:"User Queue"]
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
     [#div #nav-btn page:"settings" text:"Truck Settings"]
@@ -1162,7 +1316,7 @@ search @browser
          if menu-item = [#instructions] then "instructions"
          if menu-item = [#buyable] then "buyable"
          if menu-item = [#flags] then "flags"
-         else "normal"
+         if menu-item = [#normal] then "normal"
 
 search
   item = [#menu name image cost]
@@ -1176,11 +1330,39 @@ bind @browser
     [#div class: "item-cost" text: cost]]
 ```
 
-### Description
-Adds the items description beneath its name, if available.
+### Dietary Flags
+Adds the item's dietary flags beneath its name, if available.
 
 ```
-  search @browser
+search @browser
+  item-text = [#menu-item-text item mode: "flags"]
+
+search
+  dietary-flag = item.dietary
+
+bind @browser
+  item-text.children += [#div class:"item-flags" children:[#div #flagged sort: 2 dietary-flag]]
+
+```
+
+```
+search @browser
+  flags = [#div #flagged dietary-flag]
+  new-class = if dietary-flag = "v" then "ion-leaf"
+              if dietary-flag = "spicy" then "ion-flame"
+              if dietary-flag = "gf" then "ion-ios-rose"
+
+bind @browser
+  flags.class += new-class
+
+
+```
+
+### Description
+Adds the item's description beneath its name, if available.
+
+```
+search @browser
   item-text = [#menu-item-text item mode: "description"]
 
 search
@@ -1188,10 +1370,8 @@ search
 
 bind @browser
   item-text.children += [#div sort: 2 class: "item-description" text: description]
-
 ```
 
-### 
 ### Instructions
 Adds a "special instructions" blurb.
 
@@ -1281,6 +1461,8 @@ Add event hooks for enabling/disabling menu items.
 ```
 search @event @browser
   [#click element: [#menu-item #toggleable item]]
+  not ([#click element: [class:"item-image"]])
+  not ([#click element: [class:"item-name"]])
 
 search
   item = [#disabled]
@@ -1292,6 +1474,8 @@ commit
 ```
 search @event @browser
   [#click element: [#menu-item #toggleable item]]
+  not ([#click element: [class:"item-image"]])
+  not ([#click element: [class:"item-name"]])
 
 search
   item = [not(#disabled)]
@@ -1301,11 +1485,25 @@ commit
 ```
 
 ### Modifiable
-Modifiable items may be double-clicked to access the edit-item page for that item.
+Modifiable items may be clicked to access the edit-item page for that item.
 
 ```
 search @event @browser
   [#click element: [#menu-item #modifiable item]]
+  [#click element: [class:"item-image"]]
+
+search
+  app = [#app]
+
+commit
+  app.page := "edit-item"
+  app.current-item := item
+```
+
+```
+search @event @browser
+  [#click element: [#menu-item #modifiable item]]
+  [#click element: [class:"item-name"]]
 
 search
   app = [#app]
@@ -1408,10 +1606,13 @@ Since the style differences for individual modes are so small, they've all been 
   flex: 1 1 auto;
   flex-direction: column;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 
-.menu-item .item-name { color: #111; }
+.menu-item .item-name {
+  color: #111;
+  width: fit-content;
+}
 
 .menu-item .item-instructions {
   margin-bottom: -1.3em;
@@ -1421,6 +1622,16 @@ Since the style differences for individual modes are so small, they've all been 
 
 .menu-item .item-description {
   font-size: 10pt;
+}
+
+.menu-item .item-flags {
+  display: flex;
+  flex-direction: row;
+}
+
+.menu-item .item-flags div {
+  font-size: 1rem;
+  padding-right: 5px;
 }
 
 .menu-item .item-cost { margin: 0 10; }
@@ -1450,7 +1661,7 @@ Available flags in in the system.
 ```
 commit
   [#food-flag flag: "vegetarian" name: "V" icon: "ion-leaf"]
-  [#food-flag flag: "gluten free" name: "GF"]
+  [#food-flag flag: "gluten free" name: "GF" icon: "ion-ios-rose"]
   [#food-flag flag: "spicy" name: "SPICY" icon: "ion-flame"]
 ```
 
@@ -1528,8 +1739,15 @@ bind @browser
 
 ```css
 
-.food-flags { margin-left: 20; }
-.food-flags .food-flag { padding: 20;  }
+.food-flags {
+  margin-left: 20;
+}
+.food-flags .food-flag {
+  padding: 20;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
 .food-flag.active { background: #DDFFDD; border-color: #99FF99; }
 
 .food-flags.display {
@@ -1552,9 +1770,8 @@ bind @browser
 .btn-icon-start:before { padding-right: 10; }
 .btn-icon-end:before { position: relative; left: 100%; padding-right: 0; padding-left: 10;}
 
-.btn.bubbly { position: relative; justify-content: center; flex: 1; border: 1px solid rgba(0, 0, 0, 0.2); border-radius: 8px; }
+.btn.bubbly { position: relative; justify-content: flex-start; flex: 1; border: 1px solid rgba(0, 0, 0, 0.2); border-radius: 8px; }
 .btn.bubbly > input { background: transparent; border: none; }
-.btn.bubbly:before { position: absolute; left: 10; }
 .btn.bubbly + .btn.bubbly { margin-top: 10; }
 ```
 
@@ -1689,4 +1906,5 @@ search @browser
 
 bind @browser
   image-container.children := [#img src: image]
+
 ```
