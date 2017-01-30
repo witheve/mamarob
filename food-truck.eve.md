@@ -5,11 +5,7 @@
 start the app for the user, landing on the menu page. here we create a new
 empty order record.
 ```
-  commit [#app page:"homepage" order:[]]
-```
-
-```css
-{}
+  commit [#app page:"homepage" order:[] foo: []]
 ```
 
 ### Website Home Page
@@ -435,19 +431,21 @@ search
   image = if item.image then item.image else ""
   cost = if item.cost then item.cost else 0
   description = if item.description then item.description else ""
+  state = if wrapper = [#owner-view] then "unlocked"
+          else "locked"
 
 bind @browser
   wrapper.class += "edit-item"
   wrapper <- [children:
     [#div class: "item-top-bar" children:
       [#img src: image style: [height: "100%" background: "#DDD"]]
-      [#editable form: "edit-item" field: "name" class: "item-name" default: "name" value: name]
+      [#editable tag: state form: "edit-item" field: "name" class: "item-name" default: "name" value: name]
       [#div #submit-form form: "edit-item" item class: "btn submit-btn ion-checkmark"]]
 
     [#div class: "item-middle-bar" children:
       [#div style: [flex: 1] children:
-        [#editable form: "edit-item" field: "description" class: "btn bubbly item-description" default: "description" value: description]
-        [#editable form: "edit-item" field: "cost" class: "btn bubbly item-price" default: "price" value: cost]]
+        [#editable tag: state form: "edit-item" field: "description" class: "btn bubbly item-description" default: "description" value: description]
+        [#editable tag: state form: "edit-item" field: "cost" class: "btn bubbly item-price" default: "price" value: cost]]
 
       [#food-flags #toggleable item]]
     [#div class: "flex-spacer"]
@@ -540,19 +538,116 @@ commit
 ```
 
 ### Social Media
-- Draw top banner
-- Draw truck name
-- Draw back button
-- Clicking takes you back to the home screen
-- Draw message text form
-- Draw picture icon
-- Clicking lets you choose photo from phone storage or live photo
-- Draw social media icons
-- Facebook
-- Twitter
-- Instagram
-- All off by default
-- Clicking turns on that site for posting
+
+Draw the social media page. There are two cases we want to handle. If the truck isn't set up or there are no #enabled social media #integrations, then we should display a message prompting the owner to add those in.
+
+```
+search @browser @session
+  wrapper = [#page-wrapper page: "social-flow"]
+  // Is there a better way to do this? I want the message to display if either of these conditions are true
+  not([#app settings: [truck-name]]
+  [#integration #enabled])
+  
+bind @browser
+  wrapper.children := [#div children: 
+    [#div text: "Set up your truck to use social features"]
+    [#button #to-settings text: "Truck Settings"]]
+```
+
+Navigate to the settings page when the button is clicked
+
+```
+search
+  app = [#app]
+  
+search @event @browser
+  [#click element: [#button #to-settings]]
+  
+commit
+  app.page := "settings"
+```
+
+When the truck has a name and at least one integration, draw the complete social interface
+
+```
+search @browser
+  wrapper = [#page-wrapper page: "social-flow"]
+  
+search
+  app = [#app settings: [truck-name]]
+
+  // Integrations
+  integration = [#integration #enabled]
+  selected? = if integration = [#selected] then ""
+              else "-outline"
+  
+bind @browser
+  wrapper.children := [#div children: 
+    [#div text: truck-name]
+    [#button #to-home text: "home"]
+    [#div children:
+      [#div text: "Add a message:"]
+      [#editable #social-message default: "message..."]]    
+    [#div #integrations children:
+      [#div text: "Add a photo:"]
+      [#image-container #social-image prompt: "photo..."]]
+    [#div children: 
+      [#div text: "Select social networks"]
+      [#span #integration integration class: "ion-social-{{integration.name}}{{selected?}}"]]
+    [#button #post-social text: "Post"]]
+```
+
+Clicking an integration toggles its selection status for posting
+
+```
+search
+  [#app page: "social-flow"]
+
+search @browser @event @session
+  [#click element]
+  element = [#integration integration]
+  (add, remove) = if integration = [#selected] then ("","selected")
+                  else ("selected", "")
+  
+  
+commit
+  integration.tag += add
+  integration.tag -= remove  
+```
+
+The "post" button is enabled when at least one social integration is selected, and a message or an image is uploaded
+
+```
+search @browser @session
+  x = if [#social-message value] then ""
+      else if [#social-image image] then  ""
+  [#integration #selected]
+  post-button = [#post-social]
+  
+bind @browser
+  post-button += #enabled
+  post-button.class += "enabled"
+```
+
+When an enabled "post" button i clicked, submit the message and photo to the relevent social networks
+
+```
+search @browser @event @session
+  [#click element: [#button #post-social #enabled]]
+  message = if [#social-message value] then value
+            else ""
+  image = if [#social-image image] then image
+          else ""
+  [#integration #selected name]
+  [#time timestamp]
+  
+commit
+  [#social-message message image, time: timestamp, network: name]
+```
+
+
+Delayed Posting:
+
 - If credentials are missing, bring up credential screen
 - Draw time box
 - Says “When?” if no choice has been entered yet
@@ -570,17 +665,21 @@ commit
 - If “Now” is toggled on, choose now and revert to social media screen
 - If “Now” is not toggled on, and both a date and a time have been selected, choose that time and revert to social media screen
 - If “Now” is not toggled on, and either a time or a date is missing, flash box red and do nothing
-- Draw “Post!” button
-- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
-- When clicked, if time selected is “Now”, commit the message to social media
-- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
-- Draw social media queue
+
+Draw social media queue:
+
 - Draw thumbnail photo if there’s a photo on the post
 - Draw preview text
 - Draw scheduled time to post
 - Swipe left to remove from the queue
 - Click to parse post details into the social media form and remove message from the queue
 - Replace any contents that may already be present with contents from queued post
+
+Draw “Post!” button
+- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
+- When clicked, if time selected is “Now”, commit the message to social media
+- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
+
 
 ### Truck Settings
 
@@ -1135,6 +1234,7 @@ bind @browser
     [#div #nav-btn page:"user-queue" text:"User Queue"]
     [#div #nav-btn page:"order-queue" text:"Order Queue"]
     [#div #nav-btn page:"settings" text:"Truck Settings"]
+    [#div #nav-btn page: "social-flow" text: "Social Media"]
     [#div #nav-btn page:"owner" text:"Owner"]
     [#div #nav-btn page: "edit-item" text: "Edit Item"]
     [#div #nav-btn page: "cashier-order" text: "Cashier"]]
@@ -1229,6 +1329,7 @@ bind @browser
   [#div #truck-open-btn menu: wrapper class: "btn bubbly" class: "truck-open-btn" open]
   [#div #nav-btn class: "btn" text: "Owner" page: "owner"]
   [#div #nav-btn class: "btn" text: "Truck Settings" page: "settings"]
+  [#div #nav-btn class: "btn" text: "Social Media" page: "social-media"]
   [#div #nav-btn class: "btn" text: "Cashier" page: "cashier-order"]
   [#div #nav-btn class: "btn" text: "Queue" page: "order-queue"]
   ]
@@ -1806,6 +1907,7 @@ Clicking on an editable puts it in the #editing state, which renders an input bo
 search @event @browser
   [#click element]
   element = [#editable]
+  not(element = [#locked])
 
 commit @browser
   element += #editing
