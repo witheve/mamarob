@@ -5,7 +5,7 @@
 start the app for the user, landing on the menu page. here we create a new
 empty order record.
 ```
-  commit [#app page:"homepage" order:[] foo: []]
+  commit [#app page:"homepage" order:[]]
 ```
 
 ### Website Home Page
