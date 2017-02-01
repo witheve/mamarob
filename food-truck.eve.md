@@ -547,9 +547,9 @@ search @browser @session
   // Is there a better way to do this? I want the message to display if either of these conditions are true
   not([#app settings: [truck-name]]
   [#integration #enabled])
-  
+
 bind @browser
-  wrapper.children := [#div children: 
+  wrapper.children := [#div children:
     [#div text: "Set up your truck to use social features"]
     [#button #to-settings text: "Truck Settings"]]
 ```
@@ -559,10 +559,10 @@ Navigate to the settings page when the button is clicked
 ```
 search
   app = [#app]
-  
+
 search @event @browser
   [#click element: [#button #to-settings]]
-  
+
 commit
   app.page := "settings"
 ```
@@ -572,7 +572,7 @@ When the truck has a name and at least one integration, draw the complete social
 ```
 search @browser
   wrapper = [#page-wrapper page: "social-flow"]
-  
+
 search
   app = [#app settings: [truck-name]]
 
@@ -580,18 +580,18 @@ search
   integration = [#integration #enabled]
   selected? = if integration = [#selected] then ""
               else "-outline"
-  
+
 bind @browser
-  wrapper.children := [#div children: 
+  wrapper.children := [#div children:
     [#div text: truck-name]
     [#button #to-home text: "home"]
     [#div children:
       [#div text: "Add a message:"]
-      [#editable #social-message default: "message..."]]    
+      [#editable #social-message default: "message..."]]
     [#div #integrations children:
       [#div text: "Add a photo:"]
       [#image-container #social-image prompt: "photo..."]]
-    [#div children: 
+    [#div children:
       [#div text: "Select social networks"]
       [#span #integration integration class: "ion-social-{{integration.name}}{{selected?}}"]]
     [#button #post-social text: "Post"]]
@@ -608,11 +608,11 @@ search @browser @event @session
   element = [#integration integration]
   (add, remove) = if integration = [#selected] then ("","selected")
                   else ("selected", "")
-  
-  
+
+
 commit
   integration.tag += add
-  integration.tag -= remove  
+  integration.tag -= remove
 ```
 
 The "post" button is enabled when at least one social integration is selected, and a message or an image is uploaded
@@ -623,7 +623,7 @@ search @browser @session
       else if [#social-image image] then  ""
   [#integration #selected]
   post-button = [#post-social]
-  
+
 bind @browser
   post-button += #enabled
   post-button.class += "enabled"
@@ -640,7 +640,7 @@ search @browser @event @session
           else ""
   [#integration #selected name]
   [#time timestamp]
-  
+
 commit
   [#social-message message image, time: timestamp, network: name]
 ```
@@ -1188,6 +1188,13 @@ commit
     description:"Elbow pasta smothered with aged cheddar, fresh garlic, and parsley."
     cost:10.00
     |dietary:("v")]
+  
+  [#menu
+    name:"Jill's Mexican Grilled Corn"
+    image:"assets/corn.jpg"
+    description:"Sweet corn grilled and covered with spicy adobo aioli."
+    cost:7.00
+    |dietary:("v", "gf", "spicy")]
 
 
    [#menu
