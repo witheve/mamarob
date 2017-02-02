@@ -31,7 +31,7 @@ search @browser
    wrapper = [#page-wrapper page:"homepage"]
 
 search
-   item = [#menu not(#disabled) name image cost]
+   item = [#menu not(#disabled) name image cost menu-sort]
 
 bind @browser
   wrapper <- [children:
@@ -59,7 +59,7 @@ bind @browser
       ]
     [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [#menu-item #flags #buyable item
+       [sort:menu-sort #menu-item #flags #buyable item
        ]]]
 ```
 
@@ -358,7 +358,7 @@ search @browser
   wrapper = [#page-wrapper page: "owner"]
 
 search
-   item = [#menu name image cost]
+   item = [#menu name image cost menu-sort]
 
 bind @browser
   wrapper <- [children:
@@ -367,13 +367,14 @@ bind @browser
     [#editable class: "ion-android-search btn bubbly" default: "Enter your address"]]
 
   [#div class: "flex-row" style: [padding: "10 20" background: "#EEE"] children:
-    [#div class: "ion-arrow-left-c btn-icon-start" text: "off"]
-    [#div class: "flex-spacer" style: [text-align: "center"] text: "menu"]
-    [#div class: "ion-arrow-right-c btn-icon-end" text: "on"]]
+    //[#div class: "ion-arrow-left-c btn-icon-start" text: "off"]
+    [#div class: "flex-spacer" style: [text-align: "center"] text: "Menu"]
+    //[#div class: "ion-arrow-right-c btn-icon-end" text: "on"] style: [padding-right: 10]
+  ]
 
    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [class:"owner-page-items" #menu-item #toggleable #modifiable #normal item]]]
+       [sort:menu-sort class:"owner-page-items" #menu-item #toggleable #modifiable #flags #sortable item]]]
 ```
 
 ```css
@@ -480,20 +481,20 @@ commit
   app.current-item := none
 ```
 
-When the delete button is clicked, remove the current item from the menu.
-
-
+When the delete button is clicked, remove the current item from the menu and renumber any items below it for sorting purposes.
 
 
 ```
-search @event @browser
-  [#click element: [#delete-item-btn item]]
+search @event @browser @session
+  [#click element: [#delete-item-btn item:clicked-item]]
+  items-below = [#menu menu-sort > clicked-item.menu-sort]
 
 search
   app = [#app]
 
 commit
-  item := none
+  clicked-item := none
+  items-below.menu-sort := items-below.menu-sort - 1
   app.page := "owner"
 ```
 
@@ -1154,24 +1155,28 @@ commit
    [#menu name:"Bacon Swiss Burger"
     image:"assets/burger.jpg"
     description:"A half pound Niman Ranch burger with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
-    cost:12.00]
+    cost:12.00
+  menu-sort:1]
 
    [#menu name:"Veggie Burger"
     image:"assets/veggieburger.jpg"
     description:"Our totally vegan black bean and portabella mushroom burger on a gluten-free bun."
     cost:12.00
+  menu-sort:2
     |dietary:("v", "gf")]
 
    [#menu name:"Chicken Salad Sandwich"
     image:"assets/sandwich.jpg"
     description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread."
-    cost:10.00]
+    cost:10.00
+  menu-sort:3]
 
    [#menu
     name:"Charbroiled Chicken Wings"
     image:"assets/chickwings.jpg"
     description:"Brined, coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy."
     cost:10.00
+  menu-sort:4
     |dietary:("spicy", "gf")]
 
 
@@ -1179,6 +1184,7 @@ commit
     image:"assets/french-fries.jpg"
     description:"Hand-cut Kennebec fries with Cajun seasoning."
     cost:5.00
+  menu-sort:5
     |dietary:("v", "gf")]
 
 
@@ -1187,13 +1193,15 @@ commit
     image:"assets/mac-n-cheese.jpg"
     description:"Elbow pasta smothered with aged cheddar, fresh garlic, and parsley."
     cost:10.00
+  menu-sort:6
     |dietary:("v")]
-  
+
   [#menu
     name:"Jill's Mexican Grilled Corn"
     image:"assets/corn.jpg"
     description:"Sweet corn grilled and covered with spicy adobo aioli."
     cost:7.00
+  menu-sort:7
     |dietary:("v", "gf", "spicy")]
 
 
@@ -1202,6 +1210,7 @@ commit
     image:"assets/fritters.jpg"
     description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey."
     cost:6.00
+  menu-sort:8
     |dietary:("v")]
 
 
@@ -1210,6 +1219,7 @@ commit
     image:"assets/drink.jpg"
     description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
     cost:4.00
+  menu-sort:9
     |dietary:("v", "gf")]
 ```
 
@@ -1435,7 +1445,8 @@ bind @browser
     [#div class: "item-image" style: [background-image: "url({{image}})"]]
     [#div #menu-item-text item class: "item-text" | mode children:
       [#div class: "item-name" text: name]]
-    [#div class: "item-cost" text: cost]]
+    [#div class: "item-cost" text: cost]
+  [#div #sort-buttons]]
 ```
 
 ### Dietary Flags
@@ -1571,6 +1582,7 @@ search @event @browser
   [#click element: [#menu-item #toggleable item]]
   not ([#click element: [class:"item-image"]])
   not ([#click element: [class:"item-name"]])
+  not ([#click element: [#sort-btn]])
 
 search
   item = [#disabled]
@@ -1584,6 +1596,7 @@ search @event @browser
   [#click element: [#menu-item #toggleable item]]
   not ([#click element: [class:"item-image"]])
   not ([#click element: [class:"item-name"]])
+  not ([#click element: [#sort-btn]])
 
 search
   item = [not(#disabled)]
@@ -1619,6 +1632,75 @@ search
 commit
   app.page := "edit-item"
   app.current-item := item
+```
+
+### Menu Sorting
+Adds event hooks to add/remove item from the current order.
+
+If the item is included in the current order, give it a badge indicating how many are being purchased.
+```
+search @browser @session
+  menu-item = [#menu-item #sortable item]
+  container = menu-item.children
+  container = [#menu-item-text]
+  menu-sort = item.menu-sort
+
+bind @browser
+  container.children += [#div class: "sort-badge" text:"{{menu-sort}}"]
+```
+
+Move an item up in the list.
+@TODO: Support touch gestures.
+```
+search @browser @event @session
+  [#click element:[#sort-up-btn item:clicked-item]]
+  not([#click element:[#sort-down-btn]])
+  [#menu-item #sortable item]
+  above-clicked = [#menu menu-sort:clicked-item.menu-sort - 1]
+
+commit
+  clicked-item.menu-sort := clicked-item.menu-sort - 1
+  above-clicked.menu-sort := above-clicked.menu-sort + 1
+```
+
+Move an item down in the list.
+@TODO: Support touch gestures.
+```
+search @browser @event @session
+  [#click element:[#sort-down-btn item:clicked-item]]
+  not([#click element:[#sort-up-btn]])
+  [#menu-item #sortable item]
+  below-clicked = [#menu menu-sort:clicked-item.menu-sort + 1]
+
+commit
+  clicked-item.menu-sort := clicked-item.menu-sort + 1
+  below-clicked.menu-sort := below-clicked.menu-sort - 1
+```
+
+Draw the up button.
+@TODO: Don't show this on devices supporting gestures.
+```
+search @browser @session
+  menu-item = [#menu-item #sortable item]
+  not(item.menu-sort:1)
+  container = menu-item.children
+  container = [#sort-buttons]
+
+bind @browser
+  container.children += [#div #sort-up-btn #sort-btn sort: 10 item class:("btn","ion-chevron-up") style:[margin-right:-20]]
+```
+
+Draw the down button.
+@TODO: Don't show this on devices supporting gestures.
+```
+search @browser @session
+  menu-item = [#menu-item #sortable item]
+  not(item.menu-sort: count[given:[#menu]])
+  container = menu-item.children
+  container = [#sort-buttons]
+
+bind @browser
+  container.children += [#div #sort-down-btn #sort-btn sort: 10 item class:("btn", "ion-chevron-down") style:[margin-right:-20]]
 ```
 
 ### Styles
@@ -1758,6 +1840,20 @@ Since the style differences for individual modes are so small, they've all been 
   background: rgba(255, 255, 255, 1);
   text-align: center;
 }
+
+.menu-item .sort-badge {
+  position: absolute;
+  left: 20;
+  top: 10;
+  width: 24;
+  height: 24;
+  padding-top: 2;
+  z-index: 2;
+  border-bottom-right-radius: 8px;
+  border-top-left-radius: 4px;
+  background: rgba(255, 255, 255, 1);
+  text-align: center;
+}
 ```
 
 ## Food Flags
@@ -1768,19 +1864,9 @@ Available flags in in the system.
 
 ```
 commit
-  [#food-flag flag: "vegetarian" name: "V" icon: "ion-leaf"]
-  [#food-flag flag: "gluten free" name: "GF" icon: "ion-ios-rose"]
+  [#food-flag flag: "v" name: "V" icon: "ion-leaf"]
+  [#food-flag flag: "gf" name: "GF" icon: "ion-ios-rose"]
   [#food-flag flag: "spicy" name: "SPICY" icon: "ion-flame"]
-```
-
-Ensure every item has a flags object.
-
-```
-search
-  item = [#menu not(flags)]
-
-commit
-  item.flags := []
 ```
 
 Draw the food flags selector for an item
@@ -1793,7 +1879,7 @@ search @browser
 search
   flag-entry = [#food-flag flag name]
   icon = if flag-entry.icon then flag-entry.icon else ""
-  active? = if lookup[record: item.flags attribute: flag value: true] then true
+  active? = if item.dietary = flag then true
   else if toggleable? then false
   // If the food flags aren't toggleable, there's no reason to show inactive flags.
 
@@ -1809,14 +1895,11 @@ search @event @browser
   [#click element: [#food-flag flag item]]
 
 search
-  lookup[record: item.flags attribute: flag value: true]
+  item.dietary = flag
 
 commit
-  lookup[record: item.flags attribute: flag value: false]
-  lookup[record: item.flags attribute: flag] := none
+  item.dietary -= flag
 
-commit @browser
-  [#div text: "{{item}} {{flag}} false"]
 ```
 
 ```
@@ -1824,14 +1907,10 @@ search @event @browser
   [#click element: [#food-flag flag item]]
 
 search
-  not(lookup[record: item.flags attribute: flag value: true])
+  not(item.dietary = flag)
 
 commit
-  lookup[record: item.flags attribute: flag value: true]
-  lookup[record: item.flags attribute: flag] := none
-
-commit @browser
-  [#div text: "{{item}} {{flag}} true"]
+  item.dietary += flag
 
 ```
 
