@@ -29,8 +29,6 @@ search @debug
 bind @browser
   [#row style: [margin-bottom: 20] children:
             [#a class: "button inset pill" href: "#/{{target}}" style: [padding: 0] children: [#nav-button target text: target style: [padding: "0.5em 1em"]]]]
-            
-    
   [#window class: "app-window" #default #app-window]
 ```
 
@@ -45,15 +43,17 @@ search @browser
   window = [#app-window target: "Home"]
 
 search
-   item = [#menu not(#disabled) name image cost]
+   item = [#menu not(#disabled) name image cost menu-sort]
+   [#app settings]
+   
 
 bind @browser
   window <- [children:
     // Hero
     [#div style: [
-    height: 320
-    background-image: "url(http://i.imgur.com/1lcSHmQ.jpg)"
-    background-size: "cover"]]
+      height: "320px"
+      background-size: "cover"
+  background-image: "url({{settings.hero-image}})"]]
 
     // Location
     [#div class: "flex-row" style: [align-items: "center" height: "5em" overflow: "hidden"  background: "#EEE"]
@@ -64,16 +64,12 @@ bind @browser
 
     // Menu
     [#div class: "flex-row" style: [position: "relative" justify-content: "center" align-items: "center"] children:
-    [#h3 text: "Menu" style: [
-    margin: "10 0"
-    font-size: "2em"
-    font-weight: 200
-    text-decoration: "underline"]]
-    [#button target: "Checkout" icon: "ios-cart"]
+    [#h3 text: "Menu" class: "menu-title"]
+      [#button #cart-btn target: "Checkout" icon: "ios-cart"]
     ]
     [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
     children:
-    [#menu-item #flags #buyable item
+    [sort:menu-sort #menu-item #flags #buyable item
     ]]]
 ```
 
@@ -90,8 +86,10 @@ search
   item-count > 0
 
 bind @browser
-  wrapper.children += [#div #total-items class: "qty-badge" text: "({{item-count}})"]
+  wrapper.children += [#div class: "qty-badge" text: "({{item-count}})"]
+
 ```
+
 
 ```css
 .app-window {
@@ -100,6 +98,18 @@ bind @browser
   width: 432;
   height: 768;
   overflow-y: auto;
+}
+
+.hero-image {
+  height: 320px;
+  background-size: cover]
+}
+
+.menu-title {
+  margin: 10 0;
+  font-size: 2em;
+  font-weight: 200;
+  text-decoration: underline;
 }
 ```
 
@@ -122,9 +132,9 @@ display the current order
 - Draw a user queue banner at the very top if an order is pending for them
 
 ```eve
-search @browser
+search @browser @session
   window = [#app-window target: "Checkout"]
-   [#app-window order]
+   [#app order]
    [#order-item order item count]
    not (count = 0)
    total = sum[value: count * item.cost per:order given:item]
@@ -133,9 +143,11 @@ bind @browser
    window.children += [#div #checkout-container
      style:[flex-direction:"column" display:"flex"]
      children:
-       [#div text:"{{item.name}} {{count}} x {{item.cost}} = {{count * item.cost}}" sort:1]
-       [#div text:"total: {{total}}" sort:2]
-       [#div #order-button text:"place order!" style:[border:"2px solid black" sort:3]]]
+       [#div item children:
+       [#div class: "checkout-image" style: [background-image: "url({{item.image}})"]]
+       [#div text:"{{item.name}} {{count}} x ${{item.cost}} = ${{count * item.cost}}" sort:1]]
+       [#div text:"Total: ${{total}}" sort:2]
+       [#button target: "Stripe" text:"place order!" style:[border:"2px solid black" sort:3]]]
 ```
 
 move from the order page to the menu page
@@ -156,6 +168,22 @@ search @browser @event @session
    [#click element:[#order-button]]
 commit
    a.page := "stripe"
+
+```
+
+```css
+.checkout-image { 
+  align-self: stretch;
+  flex: 0 0 90px;
+  height: 90px;
+  width: 90px;
+  margin: 0;
+  margin-right: 10;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: middle center;
+  border-radius: 4px;
+}
 ```
 
 ### Stripe
@@ -182,7 +210,7 @@ bind @browser
       [#input class:"stripe-card" placeholder:"Card Number"]
       [#input class:"stripe-exp" placeholder:"MM/YY"]
       [#input class:"stripe-cvc" placeholder:"CVC"]]
-    [#div class:"stripe-pay-btn" text:"Pay ${{total}}"]
+    [#button target: "UserQueue" class:"stripe-pay-btn" text:"Pay ${{total}}"]
   ]
 ```
 
@@ -458,7 +486,7 @@ search @browser
   window = [#app-window target: "Owner"]
 
 search
-   item = [#menu name image cost]
+   item = [#menu name image cost menu-sort]
 
 bind @browser
   window <- [children:
@@ -467,13 +495,14 @@ bind @browser
     [#editable class: "ion-android-search btn bubbly" default: "Enter your address"]]
 
   [#div class: "flex-row" style: [padding: "10 20" background: "#EEE"] children:
-    [#div class: "ion-arrow-left-c btn-icon-start" text: "off"]
-    [#div class: "flex-spacer" style: [text-align: "center"] text: "menu"]
-    [#div class: "ion-arrow-right-c btn-icon-end" text: "on"]]
+    //[#div class: "ion-arrow-left-c btn-icon-start" text: "off"]
+    [#div class: "flex-spacer" style: [text-align: "center"] text: "Menu"]
+    //[#div class: "ion-arrow-right-c btn-icon-end" text: "on"] style: [padding-right: 10]
+  ]
 
-   [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
+      [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
      children:
-       [class:"owner-page-items" #menu-item #toggleable #modifiable #normal item]]]
+       [sort:menu-sort class:"owner-page-items" #menu-item #toggleable #modifiable #flags #sortable item]]]
 ```
 
 Open the social flow when the owner clicks the social button.
@@ -537,7 +566,7 @@ bind @browser
     [#div class: "item-top-bar" children:
       [#img src: image style: [height: "100%" background: "#DDD"]]
       [#editable tag: state form: "edit-item" field: "name" class: "item-name" default: "name" value: name]
-      [#div #submit-form form: "edit-item" item class: "btn submit-btn ion-checkmark"]]
+      [#button #submit-form form: "edit-item" item icon: "checkmark"]]
 
     [#div class: "item-middle-bar" children:
       [#div style: [flex: 1] children:
@@ -547,7 +576,7 @@ bind @browser
       [#food-flags #toggleable item]]
     [#div class: "flex-spacer"]
     [#div class: "item-bottom-bar" children:
-      [#div #delete-item-btn item class: "btn item-delete-btn ion-trash-a"]]]
+      [#button #delete-item-btn item icon: "trash-a"]]]
 ```
 
 When there isn't a current-item, redirect to the owner page.
@@ -577,17 +606,19 @@ commit
   app.current-item := none
 ```
 
-When the delete button is clicked, remove the current item from the menu.
+When the delete button is clicked, remove the current item from the menu and renumber any items below it for sorting purposes.
 
 ```
-search @event @browser
-  [#click element: [#delete-item-btn item]]
+search @event @browser @session
+  [#click element: [#delete-item-btn item:clicked-item]]
+  items-below = [#menu menu-sort > clicked-item.menu-sort]
 
 search
   app = [#app]
 
 commit
-  item := none
+  clicked-item := none
+  items-below.menu-sort := items-below.menu-sort - 1
   app.page := "owner"
 ```
 
@@ -692,13 +723,14 @@ search @browser
   window = [#app-window target: "Cashier"]
 
 search
+  [#app settings]
   item = [#menu not(#disabled) name image cost]
 
 bind @browser
   window.class += "cashier-order"
   window <- [children:
     [#header class: "flex-row" style: [flex: "0 0 auto"] children:
-      [#h1 text: "Mama Rob's"]
+      [#h1 text: settings.name]
       [#div class: "flex-spacer"]
       [#employee-menu]]
 
@@ -707,7 +739,7 @@ bind @browser
 
     [#div class: "flex-spacer"]
     [#div class: "cashier-bottom-bar" children:
-      [#div #finalize-order-btn class: "btn bubbly finalize-btn" text: "Finalize Order"]]]
+      [#button target: "Checkout" #finalize-order-btn text: "Finalize Order"]]]
 ```
 
 Move from the cashier page to the Stripe page:
@@ -769,7 +801,7 @@ search
               else "-outline"
   
 bind @browser
-  wrapper.children := [#div children: 
+  window.children := [#div children: 
     [#div text: truck-name]
     [#button #to-home text: "home"]
     [#div children:
@@ -1008,7 +1040,8 @@ bind @browser
     [#div class: "item-image" style: [background-image: "url({{image}})"]]
     [#div #menu-item-text item class: "item-text" | mode children:
       [#div class: "item-name" text: name]]
-    [#div class: "item-cost" text: cost]]
+    [#div class: "item-cost" text: cost]
+  [#div #sort-buttons]]
 ```
 
 ### Dietary Flags
@@ -1092,6 +1125,7 @@ search @browser @event @session
   [#menu-item #buyable item]
   not([#click element:[#remove-item-btn]])
   count = if [#order-item order item count:c] then c + 1 else 1
+  
 commit
   order-item = [#order-item order item]
   order-item.count := count
@@ -1119,7 +1153,7 @@ search @browser
   menu-item = [#menu-item #buyable item]
 
 bind @browser
-  menu-item.children += [#div #add-item-btn sort: 10 item class: "btn ion-plus-round" style: [margin-right: -10]]
+  menu-item.children += [#button #add-item-btn sort: 10 item icon: "plus-round" style: [margin-right: -10]]
 ```
 
 Draw the remove from cart button.
@@ -1134,7 +1168,7 @@ search @browser
   menu-item = [#menu-item #buyable item]
 
 bind @browser
-  menu-item.children += [#div #remove-item-btn sort: -1 item class: "btn ion-minus-round" class: [disabled: is(count = 0)] style: [margin-left: -10 margin-right: 10]]
+  menu-item.children += [#button #remove-item-btn sort: -1 item icon: "minus-round" class: [disabled: is(count = 0)] style: [margin-left: -10 margin-right: 10]]
 ```
 
 ### Toggleable
@@ -1145,6 +1179,7 @@ search @event @browser
   [#click element: [#menu-item #toggleable item]]
   not ([#click element: [class:"item-image"]])
   not ([#click element: [class:"item-name"]])
+  not ([#click element: [#sort-btn]])
 
 search
   item = [#disabled]
@@ -1158,6 +1193,7 @@ search @event @browser
   [#click element: [#menu-item #toggleable item]]
   not ([#click element: [class:"item-image"]])
   not ([#click element: [class:"item-name"]])
+  not ([#click element: [#sort-btn]])
 
 search
   item = [not(#disabled)]
@@ -1193,6 +1229,75 @@ search
 commit
   app.page := "edit-item"
   app.current-item := item
+```
+
+### Menu Sorting
+Adds event hooks to add/remove item from the current order.
+
+If the item is included in the current order, give it a badge indicating how many are being purchased.
+```
+search @browser @session
+  menu-item = [#menu-item #sortable item]
+  container = menu-item.children
+  container = [#menu-item-text]
+  menu-sort = item.menu-sort
+
+bind @browser
+  container.children += [#div class: "sort-badge" text:"{{menu-sort}}"]
+```
+
+Move an item up in the list.
+@TODO: Support touch gestures.
+```
+search @browser @event @session
+  [#click element:[#sort-up-btn item:clicked-item]]
+  not([#click element:[#sort-down-btn]])
+  [#menu-item #sortable item]
+  above-clicked = [#menu menu-sort:clicked-item.menu-sort - 1]
+
+commit
+  clicked-item.menu-sort := clicked-item.menu-sort - 1
+  above-clicked.menu-sort := above-clicked.menu-sort + 1
+```
+
+Move an item down in the list.
+@TODO: Support touch gestures.
+```
+search @browser @event @session
+  [#click element:[#sort-down-btn item:clicked-item]]
+  not([#click element:[#sort-up-btn]])
+  [#menu-item #sortable item]
+  below-clicked = [#menu menu-sort:clicked-item.menu-sort + 1]
+
+commit
+  clicked-item.menu-sort := clicked-item.menu-sort + 1
+  below-clicked.menu-sort := below-clicked.menu-sort - 1
+```
+
+Draw the up button.
+@TODO: Don't show this on devices supporting gestures.
+```
+search @browser @session
+  menu-item = [#menu-item #sortable item]
+  not(item.menu-sort:1)
+  container = menu-item.children
+  container = [#sort-buttons]
+
+bind @browser
+  container.children += [#div #sort-up-btn #sort-btn sort: 10 item class:("btn","ion-chevron-up") style:[margin-right:-20]]
+```
+
+Draw the down button.
+@TODO: Don't show this on devices supporting gestures.
+```
+search @browser @session
+  menu-item = [#menu-item #sortable item]
+  not(item.menu-sort: count[given:[#menu]])
+  container = menu-item.children
+  container = [#sort-buttons]
+
+bind @browser
+  container.children += [#div #sort-down-btn #sort-btn sort: 10 item class:("btn", "ion-chevron-down") style:[margin-right:-20]]
 ```
 
 ### Styles
@@ -1332,6 +1437,20 @@ Since the style differences for individual modes are so small, they've all been 
   background: rgba(255, 255, 255, 1);
   text-align: center;
 }
+
+.menu-item .sort-badge {
+  position: absolute;
+  left: 20;
+  top: 10;
+  width: 24;
+  height: 24;
+  padding-top: 2;
+  z-index: 2;
+  border-bottom-right-radius: 8px;
+  border-top-left-radius: 4px;
+  background: rgba(255, 255, 255, 1);
+  text-align: center;
+}
 ```
 
 ## Food Flags
@@ -1342,8 +1461,8 @@ Available flags in in the system.
 
 ```
 commit
-  [#food-flag flag: "vegetarian" name: "V" icon: "ion-leaf"]
-  [#food-flag flag: "gluten free" name: "GF" icon: "ion-ios-rose"]
+  [#food-flag flag: "v" name: "V" icon: "ion-leaf"]
+  [#food-flag flag: "gf" name: "GF" icon: "ion-ios-rose"]
   [#food-flag flag: "spicy" name: "SPICY" icon: "ion-flame"]
 ```
 
@@ -1383,14 +1502,11 @@ search @event @browser
   [#click element: [#food-flag flag item]]
 
 search
-  lookup[record: item.flags attribute: flag value: true]
+  item.dietary = flag
 
 commit
-  lookup[record: item.flags attribute: flag value: false]
-  lookup[record: item.flags attribute: flag] := none
+  item.dietary -= flag
 
-commit @browser
-  [#div text: "{{item}} {{flag}} false"]
 ```
 
 ```
@@ -1398,15 +1514,10 @@ search @event @browser
   [#click element: [#food-flag flag item]]
 
 search
-  not(lookup[record: item.flags attribute: flag value: true])
+  not(item.dietary = flag)
 
 commit
-  lookup[record: item.flags attribute: flag value: true]
-  lookup[record: item.flags attribute: flag] := none
-
-commit @browser
-  [#div text: "{{item}} {{flag}} true"]
-
+  item.dietary += flag
 ```
 
 ```
@@ -1451,6 +1562,18 @@ search @event @browser
   
 commit @browser
   window.target := target
+
+```
+
+There are some special cases when certain buttons are clicked
+
+```
+search
+  app = [#app]
+  item = [#menu name: "French Fries"]
+  
+commit
+  app.current-item := item
 ```
 
 # Sample Food Truck
@@ -1465,10 +1588,26 @@ commit @browser
   [#app-window target: "Home"]
 
 commit 
-  [#app order: orders, settings: [name: "Mama Rob's" image: "http://i.imgur.com/1lcSHmQ.jpg"]]
+  [#app order: orders, settings: [name: "Mama Rob's" hero-image: "http://i.imgur.com/1lcSHmQ.jpg"]]
 ```
 
 ### Sample Orders
+
+A sample user's order
+
+```
+search
+  [#app order]
+  item1 = [#menu name: "French Fries"]
+  item2 = [#menu name: "Bacon Swiss Burger"]
+    
+commit
+  [#order #my-order number: 8 status: "pending" items:
+    [#order-item order item: item1 count: 2]
+    [#order-item order item: item2 count: 1]]
+```
+
+Other orders
 
 ```eve
 search 
@@ -1512,24 +1651,28 @@ commit
    [#menu name:"Bacon Swiss Burger"
     image:"assets/burger.jpg"
     description:"A half pound Niman Ranch burger with melted Swiss, thick cut bacon, and housemade aioli and ketchup."
-    cost:12.00]
+    cost:12.00
+  menu-sort:1]
 
    [#menu name:"Veggie Burger"
     image:"assets/veggieburger.jpg"
     description:"Our totally vegan black bean and portabella mushroom burger on a gluten-free bun."
     cost:12.00
+  menu-sort:2
     |dietary:("v", "gf")]
 
    [#menu name:"Chicken Salad Sandwich"
     image:"assets/sandwich.jpg"
     description:"Grandma’s chicken salad recipe with grapes and walnuts, served on wholesome 12 grain bread."
-    cost:10.00]
+    cost:10.00
+  menu-sort:3]
 
    [#menu
     name:"Charbroiled Chicken Wings"
     image:"assets/chickwings.jpg"
     description:"Brined, coated with our secret spice rub, then grilled until then skin is crispy and the meat is juicy."
     cost:10.00
+  menu-sort:4
     |dietary:("spicy", "gf")]
 
 
@@ -1537,6 +1680,7 @@ commit
     image:"assets/french-fries.jpg"
     description:"Hand-cut Kennebec fries with Cajun seasoning."
     cost:5.00
+  menu-sort:5
     |dietary:("v", "gf")]
 
 
@@ -1545,7 +1689,16 @@ commit
     image:"assets/mac-n-cheese.jpg"
     description:"Elbow pasta smothered with aged cheddar, fresh garlic, and parsley."
     cost:10.00
+  menu-sort:6
     |dietary:("v")]
+
+  [#menu
+    name:"Jill's Mexican Grilled Corn"
+    image:"assets/corn.jpg"
+    description:"Sweet corn grilled and covered with spicy adobo aioli."
+    cost:7.00
+  menu-sort:7
+    |dietary:("v", "gf", "spicy")]
 
 
    [#menu
@@ -1553,6 +1706,7 @@ commit
     image:"assets/fritters.jpg"
     description:"Our take on the classic - deep-fried yeast doughnuts topped with powdered sugar and drizzled with honey."
     cost:6.00
+  menu-sort:8
     |dietary:("v")]
 
 
@@ -1561,10 +1715,12 @@ commit
     image:"assets/drink.jpg"
     description:"Freshly brewed iced tea and freshly squeezed lemonade with just a touch of mint! The perfect thirst-quencher."
     cost:4.00
+  menu-sort:9
     |dietary:("v", "gf")]
+
 ```
 
-# Components
+Components
 
 Shared
 
@@ -2174,4 +2330,68 @@ commit
   integration -= #pending
   integration += #enabled
   app.page := "settings"
+```
+
+## Editable
+
+Every `#editable` is also a `#div`
+
+```
+search @browser
+  editable = [#editable]
+
+bind @browser
+  editable += #div
+```
+
+If an editable has no text, display default text
+
+```
+search @browser
+  editable = [#editable not(#editing) default]
+  name = if editable.value = "" then default
+         else if editable.value then editable.value
+         else default
+
+bind @browser
+  editable.children := [#div text: name]
+```
+
+Clicking on an editable puts it in the #editing state, which renders an input box instead of a raw div.
+
+```
+search @event @browser
+  [#click element]
+  element = [#editable]
+  not(element = [#locked])
+
+commit @browser
+  element += #editing
+  element.class += "editing"
+```
+
+`#editables` in editing mode have an #input instead of a #div
+
+```
+search @browser
+  editable = [#editable #editing]
+  value = if editable.value then editable.value
+          else ""
+
+bind @browser
+  editable.children := [#input value autofocus: true]
+```
+
+Pressing "enter" while editing an #editable will save its current text and revert the editable back to its original state
+
+```
+search @browser
+  editable = [#editable children: [#input value]]
+
+search @event
+  event = [#keydown element: editable key: "enter"]
+
+commit @browser
+  editable -= #editing
+  editable.value := value
 ```
