@@ -1,26 +1,40 @@
 # Food Truck App
 
 ```css
-{ }
+{for a good time, leave this here}
 ```
 
-Add some pages
+## Page Template
+### Starting Page
+Set the starting target window to the home page.
+
+```
+search @browser
+  window = [#app-window]
+
+commit @browser
+  window.target := "Home"
+```
+
+### Pages
+Add the different pages.
 
 ```
 commit @debug
   [#page target: "Home"]
   [#page target: "Checkout"]
   [#page target: "Stripe"]
-  [#page target: "UserQueue"]
+  [#page target: "User Queue"]
   [#page target: "Owner"]
-  [#page target: "EditItem"]
-  [#page target: "OrderQueue"]
+  [#page target: "Edit Item"]
+  [#page target: "Order Queue"]
   [#page target: "Cashier"]
-  [#page target: "TruckSettings"]
-  [#page target: "SocialMedia"]
+  [#page target: "Truck Settings"]
+  [#page target: "Social Media"]
 ```
 
-The main app window, and accompanying buttons
+### The App Window
+The main app window and accompanying buttons.
 
 ```
 search @debug
@@ -32,10 +46,21 @@ bind @browser
   [#window class: "app-window" #default #app-window]
 ```
 
+### Navigation Buttons
+
+When a button with a target is clicked, set the window to that target.
+
+```
+search @event @browser
+  [#click element: [#button target]]
+  window = [#app-window]
+
+commit @browser
+  window.target := target
+```
+
 ## User View
-
-### Home page
-
+### User Home Page
 Draw the hero image, map location, and menu listing
 
 ```
@@ -45,32 +70,29 @@ search @browser
 search
    item = [#menu not(#disabled) name image cost menu-sort]
    [#app settings]
-   
+
 
 bind @browser
   window <- [children:
     // Hero
-    [#div style: [
-      height: "320px"
-      background-size: "cover"
-  background-image: "url({{settings.hero-image}})"]]
+    [#div class:"hero-image" style: [background-image: "url({{settings.hero-image}})"]
+    ]
 
     // Location
-    [#div class: "flex-row" style: [align-items: "center" height: "5em" overflow: "hidden"  background: "#EEE"]
-    children:
-    [#h3 text: "Location Now:" style: [flex: "0 0 auto" padding: "0 20" margin: 0 font-size: "2em" font-weight: 200]]
-    [#img #mapz src: "https://goo.gl/euvdoF"
-    style: [flex: 1 background-size: "cover"]]]
+    [#div class: "location-row" children:
+      [#h3 class:"location-now-text" text: "Location Now:"]
+      [#img #mapz class:"location-map" src:"https://goo.gl/euvdoF"]
+    ]
 
     // Menu
-    [#div class: "flex-row" style: [position: "relative" justify-content: "center" align-items: "center"] children:
-    [#h3 text: "Menu" class: "menu-title"]
-      [#button #cart-btn target: "Checkout" icon: "ios-cart"]
+    [#div class: "menu-header" children:
+      [#h3 text: "Menu" class: "menu-title"]
+      [#button #cart-btn target: "Checkout" icon: "android-cart"]
     ]
-    [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
-    children:
-    [sort:menu-sort #menu-item #flags #buyable item
-    ]]]
+    [#div #menu-pane class:"menu-pane" children:
+      [sort:menu-sort #menu-item #flags #buyable item]
+    ]
+  ]
 ```
 
 Display a quantity badge on the shopping cart button.
@@ -87,35 +109,10 @@ search
 
 bind @browser
   wrapper.children += [#div class: "qty-badge" text: "({{item-count}})"]
-
-```
-
-
-```css
-.app-window {
-  align-self: center;
-  background: white;
-  width: 432;
-  height: 768;
-  overflow-y: auto;
-}
-
-.hero-image {
-  height: 320px;
-  background-size: cover]
-}
-
-.menu-title {
-  margin: 10 0;
-  font-size: 2em;
-  font-weight: 200;
-  text-decoration: underline;
-}
 ```
 
 ### Checkout Page
-
-display the nav button, which is unconditional
+Display the nav button, which is unconditional.
 
 ```eve
 search @browser
@@ -124,70 +121,34 @@ search @browser
 search
    [#app order]
 bind @browser
-   window.children += [#button target: "Home" icon: "ios-arrow-back" text:"Back to menu!"]
+   window.children += [#button target: "Home" icon: "ios-arrow-back" text:"Back to Menu!"]
 ```
 
-display the current order
-
-- Draw a user queue banner at the very top if an order is pending for them
+Display the current order.
 
 ```eve
 search @browser @session
   window = [#app-window target: "Checkout"]
-   [#app order]
-   [#order-item order item count]
-   not (count = 0)
-   total = sum[value: count * item.cost per:order given:item]
+  [#app order]
+  [#order-item order item count]
+  not (count = 0)
+  total = sum[value: count * item.cost per:order given:item]
+  item = [#menu not(#disabled) name image cost menu-sort]
 
 bind @browser
-   window.children += [#div #checkout-container
-     style:[flex-direction:"column" display:"flex"]
-     children:
-       [#div item children:
-       [#div class: "checkout-image" style: [background-image: "url({{item.image}})"]]
-       [#div text:"{{item.name}} {{count}} x ${{item.cost}} = ${{count * item.cost}}" sort:1]]
-       [#div text:"Total: ${{total}}" sort:2]
-       [#button target: "Stripe" text:"place order!" style:[border:"2px solid black" sort:3]]]
-```
-
-move from the order page to the menu page
-
-```
-search @browser @event @session
-   a = [#app page:"checkout" order]
-   [#click element:[#from-checkout-to-home]]
-commit
-   a.page := "homepage"
-```
-
-Move from the checkout page to the Stripe page:
-
-```
-search @browser @event @session
-   a = [#app page:"checkout" order]
-   [#click element:[#order-button]]
-commit
-   a.page := "stripe"
-
-```
-
-```css
-.checkout-image { 
-  align-self: stretch;
-  flex: 0 0 90px;
-  height: 90px;
-  width: 90px;
-  margin: 0;
-  margin-right: 10;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: middle center;
-  border-radius: 4px;
-}
+  window.children += [#div #checkout-container class:"checkout"
+    style:[flex-direction:"column" display:"flex"]
+    children:
+      [#div class:"checkout-food" children:
+        [#menu-item #buyable item]]
+  ]
+  window.children += [#div class:"checkout-info" children:
+      [#div class:"checkout-total" text:"Total: ${{total}}"]
+      [#button target: "Stripe" class:"checkout-pay-btn" text:"Place Order!"]
+  ]
 ```
 
 ### Stripe
-
 This block draws the Stripe page.
 
 ```
@@ -199,7 +160,6 @@ search
    [#order-item order item count]
    total = sum[value: count * item.cost per:order given:item]
 
-
 bind @browser
   window.children += [#div class:"stripe" children:
     [#div class:"stripe-title" children:
@@ -210,20 +170,180 @@ bind @browser
       [#input class:"stripe-card" placeholder:"Card Number"]
       [#input class:"stripe-exp" placeholder:"MM/YY"]
       [#input class:"stripe-cvc" placeholder:"CVC"]]
-    [#button target: "UserQueue" class:"stripe-pay-btn" text:"Pay ${{total}}"]
+    [#button target: "User Queue" class:"stripe-pay-btn" text:"Pay ${{total}}"]
   ]
 ```
 
+This block commits the current cart to a new order record, which then appears in the Orders Pending Queue, and empties the cart to "reset" it.
+
 ```
 search @browser @event @session
-  a = [#app page:"stripe" order]
+  [#app order]
+  cart = [#order-item order item count]
+  count > 0
+  next-order = if c = count[given: [#order]] then c + 1
+               else 1
+  window = [#app-window target: "Stripe"]
   [#click element:[class:"stripe-pay-btn"]]
 
 commit
-  a.page := "user-queue"
+  [#order #my-order number:next-order status:"pending" items:
+    [#order-item item count]]
+  cart := none
 ```
 
+### User Queue Page
+Draw the user queue page if they have an order tagged #`my-order`.
+
+```
+search @browser
+  window = [#app-window target: "User Queue"]
+
+search
+  order = [#order #my-order number items status]
+  (ahead, message, my-status) = if status:"ready" then ("Your order is ready!","","ready")
+    else if count[given: [#order status:"pending" number < order.number]] = 1 then ("1","order ahead of you!","ahead")
+    else if ahead = count[given: [#order status:"pending" number < order.number]] then (ahead,"orders ahead of you!","ahead")
+    else ("0","orders ahead of you!","ahead")
+
+bind @browser
+  window.children += [#div class:"my-order" children:
+    [#div class:"order-confirmed" text:"Order confirmed!"]
+    [#div class:my-status text:ahead]
+    [#div class:"msg" text:message]
+    [#div class:"my-order-number" text:"Order #{{number}}"]
+    [#div class:"my-food" text:"{{items.count}}x {{items.item.name}}"]
+    [#div class:"spacer"]
+  [#button target: "Home" text:"❮ Back to Mama Rob's"]]
+```
+
+This block redirects the user back to the home page if they've haven't ordered yet.
+
+```
+search @browser
+  window = [#app-window target: "User Queue"]
+
+search
+  not ([#order #my-order])
+
+bind @browser
+  window.children += [#div class:"my-order" children:
+    [#div class:"order-confirmed" text:"Oops! Looks like you haven't ordered yet."]
+    [#div class:"spacer"]
+  [#button target: "Home" text:"❮ Back to Mama Rob's"]]
+```
+
+### Styles
+Styling for the user view pages.
+
 ```css
+.hero-image {
+  height: 320px;
+  background-size: cover;
+}
+
+.app-window .location-row {
+  align-items: center;
+  height: 5em;
+  overflow: hidden;
+  background: #eee;
+  display: flex;
+  flex-direction: row;
+}
+
+.app-window .location-now-text {
+  flex: 1 0 auto;
+  padding: 0px 20px;
+  margin: 0px;
+  font-size: 2em;
+  font-weight: 200;
+}
+
+.app-window .location-map {
+  flex: 1;
+  background-size: cover;
+}
+
+.menu-header {
+  position: relative;
+  justify-content: center;
+  align-items: center;
+}
+
+.menu-pane {
+  flex: 0 0 auto;
+  flex-direction: column;
+}
+
+.app-window {
+  align-self: center;
+  background: white;
+  width: 432;
+  height: 768;
+  overflow-y: auto;
+}
+
+.menu-title {
+  margin: 10 0;
+  font-size: 2em;
+  font-weight: 200;
+  text-decoration: underline;
+  text-align: center;
+}
+
+.ion-android-cart {
+  font-size: 24px;
+  position: absolute;
+  top: 2px;
+  right: 0px;
+  display: flex;
+  flex: 1 1 auto;
+  width: 90px;
+  align-items: flex-end;
+}
+
+.ion-android-cart::before {
+  font-size: 24px;
+  padding-left: 10px;
+}
+
+.app-window {
+  position: relative;
+  overflow-y: scroll;
+}
+
+.checkout {
+  max-height: 620px;
+  overflow-y: scroll;
+}
+
+.checkout-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 20px;
+  background-color: #fff;
+  border-top: 1px solid #d1d1d1;
+  z-index: 10;
+}
+
+.app-window .checkout-total {
+  font-size: 1.2rem;
+  align-self: center;
+  padding: 10px 0px;
+}
+
+.app-window .checkout-pay-btn {
+  border: 1px solid #307ac5;
+  border-radius: 4px;
+  padding: 10px 50px;
+  background: linear-gradient(#46b1e5, #3099db);
+  color: white;
+  align-self: center;
+  bottom: 0px;
+}
+
 .stripe {
   display: flex;
   flex-direction: column;
@@ -301,76 +421,7 @@ commit
   background: linear-gradient(#46b1e5, #3099db);
   color: white;
 }
-```
 
-This block commits the current cart to a new order record, which then appears in the Orders Pending Queue, and empties the cart to "reset" it.
-
-```
-search @browser @event @session
-  [#app order]
-  cart = [#order-item order item count]
-  count > 0
-  next-order = if c = count[given: [#order]] then c + 1
-               else 1
-  a = [#app page:"stripe" order]
-  [#click element:[class:"stripe-pay-btn"]]
-
-commit
-  [#order #my-order number:next-order status:"pending" items:
-    [#order-item item count]]
-  cart := none
-
-```
-
-### User Queue Page
-
-- Draw “Order Confirmed!” text
-- Draw queue status
-- If order is not ready yet, display number of pending orders ahead of user
-- If order is ready, display “Order #XX is ready!”
-- Draw order recap
-- Draw back button to go back to home page
-
-```
-search @browser
-  window = [#app-window target: "UserQueue"]
-
-search
-  order = [#order #my-order number items status]
-  (ahead, message, my-status) = if status:"ready" then ("Your order is ready!","","ready")
-    else if count[given: [#order status:"pending" number < order.number]] = 1 then ("1","order ahead of you!","ahead")
-    else if ahead = count[given: [#order status:"pending" number < order.number]] then (ahead,"orders ahead of you!","ahead")
-    else ("0","orders ahead of you!","ahead")
-
-bind @browser
-  window.children += [#div class:"my-order" children:
-    [#div class:"order-confirmed" text:"Order confirmed!"]
-    [#div class:my-status text:ahead]
-    [#div class:"msg" text:message]
-    [#div class:"my-order-number" text:"Order #{{number}}"]
-    [#div class:"my-food" text:"{{items.count}}x {{items.item.name}}"]
-    [#div class:"spacer"]
-  [#button target: "Home" text:"❮ Back to Mama Rob's"]]
-
-```
-
-This block redirects the user back to the home page if they've haven't ordered yet.
-
-```
-search @browser
-  wrapper = [#page-wrapper page: "user-queue"]
-
-search
-  not ([#order #my-order])
-
-bind @browser
-  wrapper.children += [#div class:"my-order" children:
-    [#div class:"order-confirmed" text:"Oops! Looks like you haven't ordered yet."]
-    [#div class:"spacer"]
-  [#button target: "Home" text:"❮ Back to Mama Rob's"]]
-```
-
-```css
 .my-order {
   flex: 0 0 600px;
   margin-bottom: 20px;
@@ -452,34 +503,10 @@ bind @browser
 .my-order .back-btn:hover {
   color: #0076ce;
 }
-
 ```
 
 ## Owner View
-
-### Home Screen
-
-- Draw top banner
-- Draw truck name
-- Draw settings button
-- Clicking button takes you to truck settings page
-- Draw Social Media button
-- Clicking button takes you to Social Media page
-- Draw address search bar
-- Google Maps integration
-- Phone location integration
-- Draw Menu header
-- Draw Menu text
-- Draw left and arrows to show swipe direction
-- Draw “+” button to add item
-- Clicking brings up item listing overlay
-- Draw menu items
-- Draw picture
-- Draw item name
-- All items are on by default, and remember their last state
-- Swipe left to turn item off
-- Swipe right to turn item on
-- Clicking brings up item listing overlay
+### Owner App Home
 
 ```
 search @browser
@@ -490,66 +517,26 @@ search
 
 bind @browser
   window <- [children:
-  [#div style: [padding: 10] children:
-    [#button target: "SocialMedia" text: "Social Media"]
+  [#div class:"owner-tools-pane" children:
+    [#button target: "Social Media" text: "Social Media"]
     [#editable class: "ion-android-search btn bubbly" default: "Enter your address"]]
 
-  [#div class: "flex-row" style: [padding: "10 20" background: "#EEE"] children:
+  [#div class: "owner-menu-header" children:
     //[#div class: "ion-arrow-left-c btn-icon-start" text: "off"]
-    [#div class: "flex-spacer" style: [text-align: "center"] text: "Menu"]
+    [#div class: "owner-menu-text" text: "Menu"]
     //[#div class: "ion-arrow-right-c btn-icon-end" text: "on"] style: [padding-right: 10]
   ]
 
-      [#div #menu-pane style:[flex:"0 0 auto" flex-direction:"column"]
-     children:
-       [sort:menu-sort class:"owner-page-items" #menu-item #toggleable #modifiable #flags #sortable item]]]
-```
-
-Open the social flow when the owner clicks the social button.
-
-```
-search @event @browser
-  [#click element: [#social-btn]]
-
-search
-  app = [#app]
-
-commit
-  app.page := "social-flow"
+   [#div #menu-pane class:"owner-menu-pane" children:
+     [sort:menu-sort class:"owner-page-items" #menu-item #toggleable #modifiable #flags #sortable item]]]
 ```
 
 ### Edit Item
-
-- Draw item photo
-- Blank by default
-- Clicking lets you choose photo from phone storage or live photo
-- Draw item description text form
-- Blank by default
-- Draw item price text form
-- Blank by default
-- Draw item health icons
-- Vegetarian
-- Draw icon
-- Draw “V” text
-- Gluten-free
-- Draw icon
-- Draw “GF” text
-- Spicy
-- Draw icon
-- Draw “Spicy” text
-- All off by default
-- Clicking toggles on/off
-- Draw trash can icon
-- Clicking brings up an “Are you sure?” yes/no prompt
-- Clicking no reverts to item listing
-- Clicking yes permanently deletes the item listing and returns to the home screen
-- Draw accept button
-- If name and price forms both have information, commit contents of all 3 forms plus 3 health icons to item listing
-- If either name or price forms do not have information, pop up an error message saying “You’re missing a name/price!” with an OK button to revert to item listing
+text
 
 ```
 search @browser
-  window = [#app-window target: "EditItem"]
+  window = [#app-window target: "Edit Item"]
 
 search
   [#app current-item: item]
@@ -558,7 +545,7 @@ search
   cost = if item.cost then item.cost else 0
   description = if item.description then item.description else ""
   state = if wrapper = [#owner-view] then "unlocked"
-          else "locked"
+          else "unlocked"
 
 bind @browser
   window.class += "edit-item"
@@ -569,24 +556,13 @@ bind @browser
       [#button #submit-form form: "edit-item" item icon: "checkmark"]]
 
     [#div class: "item-middle-bar" children:
-      [#div style: [flex: 1] children:
+      [#div class:"item-desc-price" children:
         [#editable tag: state form: "edit-item" field: "description" class: "btn bubbly item-description" default: "description" value: description]
         [#editable tag: state form: "edit-item" field: "cost" class: "btn bubbly item-price" default: "price" value: cost]]
 
       [#food-flags #toggleable item]]
-    [#div class: "flex-spacer"]
     [#div class: "item-bottom-bar" children:
       [#button #delete-item-btn item icon: "trash-a"]]]
-```
-
-When there isn't a current-item, redirect to the owner page.
-
-```
-search
-  app = [#app page: "edit-item" not(current-item)]
-
-commit
-  app.page := "owner"
 ```
 
 When the submit button is clicked, save the current form state to the item, then clear it.
@@ -595,14 +571,15 @@ When the submit button is clicked, save the current form state to the item, then
 search @event @browser
   [#click element: [#submit-form form item]]
   form-elem = [#editable form field value]
+  window = [#app-window target: "Edit Item"]
 
 search
   app = [#app]
 
-commit
+commit @session @browser
   lookup[record: item attribute: field] := none
   lookup[record: item attribute: field value]
-  app.page := "owner"
+  window.target := "Owner"
   app.current-item := none
 ```
 
@@ -612,58 +589,15 @@ When the delete button is clicked, remove the current item from the menu and ren
 search @event @browser @session
   [#click element: [#delete-item-btn item:clicked-item]]
   items-below = [#menu menu-sort > clicked-item.menu-sort]
+  window = [#app-window target: "Edit Item"]
 
-search
-  app = [#app]
-
-commit
+commit @session @browser
   clicked-item := none
   items-below.menu-sort := items-below.menu-sort - 1
-  app.page := "owner"
-```
-
-```css
-.edit-item { display: flex; flex-direction: column; }
-
-.edit-item .item-top-bar {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  height: 140;
-  padding: 20;
-}
-
-.edit-item .item-top-bar > img { border-radius: 6px; }
-
-.edit-item .item-name { flex: 1; padding: 0 20; font-size: 1.5em; }
-
-.edit-item .submit-btn { position: absolute; right: 0; top: 0; padding-top: 30; padding-right: 20; }
-
-.edit-item .item-middle-bar {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  padding: 0 20;
-}
-
-.edit-item .item-description { height: 5em; justify-content: flex-start !important; }
-.edit-item .item-price { width: 5em; justify-content: flex-start !important; padding-left: 20; }
-.edit-item .item-price:before { display: block; content: "$" }
-
-.edit-item .item-bottom-bar {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  margin-top: 10;
-}
-
-.edit-item .item-delete-btn { display: flex; flex: 0 0 auto; padding-right: 20; padding-bottom: 30;}
-
+  window.target := "Owner"
 ```
 
 ### Order Queue
-
 The pending orders queue is a portion of the food truck app that is used onboard the food truck itself to help whoever is working the pass to see what orders are currently being made and which orders are completed and ready for pickup. This portion of the app resembles TodoMVC in a way, as it needs to show a list of pending orders (todos) which can be progressed along according to their states of completion.
 
 Orders are placed by the customer on their mobile device or by the cashier in the truck, but both end up in the @`orders` database, which assigns them the #`order` tag and an order `number` attribute. The contents of the order itself are kept in the [body? Don’t know which attribute would be here], and are visible in the order queue to help keep track of the order, but are not adjustable here. Finally, each order has a `status` flag which affects how the order is displayed in the queue. When they enter the @`orders` database, their default value is `pending`, and can be progressed to `ready` once the order is prepared and finally to `complete` once the customer has picked up the order.
@@ -672,7 +606,7 @@ This block draws orders in the browser that have an order number, items in the o
 
 ```eve
 search @browser
-  window = [#app-window target: "OrderQueue"]
+  window = [#app-window target: "Order Queue"]
 
 search
   order = [#order number items status]
@@ -703,20 +637,7 @@ commit
 This block is some mocked up order data and will assuredly be replaced by the actual orders database once all the different parts of the app are integrated.
 
 ### Cashier
-
-- Draw top banner
-- Draw truck name
-- Draw open/closed icon
-- Clicking brings up open/closed overlay
-- Clicking open sets truck status to open for business and reverts back to order screen
-- Clicking closed sets truck status to closed and reverts back to order screen
-- Draw menu items
-- Draw photo
-- Draw item name
-- Swiping right adds one to the cart
-- Swiping left removes one from the cart
-- Draw pay button
-- Clicking pay button takes you to the Stripe payment page/overlay
+text
 
 ```
 search @browser
@@ -724,66 +645,36 @@ search @browser
 
 search
   [#app settings]
-  item = [#menu not(#disabled) name image cost]
+  item = [#menu not(#disabled) name image cost menu-sort]
 
 bind @browser
   window.class += "cashier-order"
   window <- [children:
-    [#header class: "flex-row" style: [flex: "0 0 auto"] children:
+    [#header class: "cashier-header"  children:
       [#h1 text: settings.name]
-      [#div class: "flex-spacer"]
       [#employee-menu]]
 
     [#div class: "menu-items" children:
-      [#menu-item #buyable item]]
+      [sort:menu-sort #menu-item #buyable item]]
 
     [#div class: "flex-spacer"]
     [#div class: "cashier-bottom-bar" children:
-      [#button target: "Checkout" #finalize-order-btn text: "Finalize Order"]]]
-```
-
-Move from the cashier page to the Stripe page:
-```
-search @browser @event @session
-  [#app order]
-  [#order-item order item count]
-  not (count = 0)
-  a = [#app page:"cashier-order" order]
-  [#click element:[#finalize-order-btn]]
-commit
-   a.page := "stripe"
-```
-
-```css
-
-.cashier-order { display: flex; flex-direction: column; }
-
-.cashier-order header { border-bottom: 1px solid #DDD; box-shadow: 0 6px 6px -3px white; z-index: 1; }
-
-.cashier-order h1 { margin: 20; margin-bottom: 0; }
-
-.cashier-order .menu-btn { align-self: flex-start; padding: 20;  font-size: 2em; }
-
-.cashier-order .menu-items { position: relative; overflow-y: auto; }
-
-.cashier-order .cashier-bottom-bar { padding: 10 80; border-top: 1px solid #DDD; box-shadow: 0 -6px 6px -3px white; z-index: 1; }
-
+      [#button class:"checkout-pay-btn" target: "Stripe" #finalize-order-btn text: "Finalize Order"]]]
 ```
 
 ### Social Media
-
 Draw the social media page. There are two cases we want to handle. If the truck isn't set up or there are no #enabled social media #integrations, then we should display a message prompting the owner to add those in.
 
 ```
 search @browser @session
-  window = [#app-window target: "SocialMedia"]
+  window = [#app-window target: "Social Media"]
   not([#app settings: [truck-name]]
   [#integration #enabled])
-  
+
 bind @browser
-  window.children := [#div children: 
+  window.children := [#div children:
     [#div text: "Set up your truck to use social features"]
-    [#button target: "TruckSettings" text: "Truck Settings"]]
+    [#button target: "Truck Settings" text: "Truck Settings"]]
 ```
 
 When the truck has a name and at least one integration, draw the complete social interface
@@ -791,7 +682,7 @@ When the truck has a name and at least one integration, draw the complete social
 ```
 search @browser
   window = [#app-window target: "SocialMedia"]
-  
+
 search
   app = [#app settings: [truck-name]]
 
@@ -799,18 +690,18 @@ search
   integration = [#integration #enabled]
   selected? = if integration = [#selected] then ""
               else "-outline"
-  
+
 bind @browser
-  window.children := [#div children: 
+  window.children := [#div children:
     [#div text: truck-name]
     [#button #to-home text: "home"]
     [#div children:
       [#div text: "Add a message:"]
-      [#editable #social-message default: "message..."]]    
+      [#editable #social-message default: "message..."]]
     [#div #integrations children:
       [#div text: "Add a photo:"]
       [#image-container #social-image prompt: "photo..."]]
-    [#div children: 
+    [#div children:
       [#div text: "Select social networks"]
       [#span #integration integration class: "ion-social-{{integration.name}}{{selected?}}"]]
     [#button #post-social text: "Post"]]
@@ -827,11 +718,11 @@ search @browser @event @session
   element = [#integration integration]
   (add, remove) = if integration = [#selected] then ("","selected")
                   else ("selected", "")
-  
-  
+
+
 commit
   integration.tag += add
-  integration.tag -= remove  
+  integration.tag -= remove
 ```
 
 The "post" button is enabled when at least one social integration is selected, and a message or an image is uploaded
@@ -842,7 +733,7 @@ search @browser @session
       else if [#social-image image] then  ""
   [#integration #selected]
   post-button = [#post-social]
-  
+
 bind @browser
   post-button += #enabled
   post-button.class += "enabled"
@@ -859,49 +750,12 @@ search @browser @event @session
           else ""
   [#integration #selected name]
   [#time timestamp]
-  
+
 commit
   [#social-message message image, time: timestamp, network: name]
 ```
 
-
-Delayed Posting:
-
-- If credentials are missing, bring up credential screen
-- Draw time box
-- Says “When?” if no choice has been entered yet
-- Clicking brings up time overlay
-- Draw “Now” toggle
-- Draw time and date selection
-- Draw date icon
-- Clicking opens a calendar
-- Clicking a date chooses that date and closes the calendar
-- Draw time selector
-- Scrolling up counts forward in time
-- Scrolling down counts backwards in time
-- Draw check box button
-- When clicked, apply time choice to post
-- If “Now” is toggled on, choose now and revert to social media screen
-- If “Now” is not toggled on, and both a date and a time have been selected, choose that time and revert to social media screen
-- If “Now” is not toggled on, and either a time or a date is missing, flash box red and do nothing
-
-Draw social media queue:
-
-- Draw thumbnail photo if there’s a photo on the post
-- Draw preview text
-- Draw scheduled time to post
-- Swipe left to remove from the queue
-- Click to parse post details into the social media form and remove message from the queue
-- Replace any contents that may already be present with contents from queued post
-
-Draw “Post!” button
-- If the message form contains text, at least one social media icon is toggled on, and a time is selected, make button clickable
-- When clicked, if time selected is “Now”, commit the message to social media
-- When clicked, if time selected is a later date, add message to social media queue to be posted at that time
-
-
 ### Truck Settings
-
 Add some integrations
 
 ```
@@ -915,7 +769,7 @@ Structure the page
 
 ```
 search @browser @session
-  window = [#app-window target: "TruckSettings"]
+  window = [#app-window target: "Truck Settings"]
   integration = [#integration]
   enabled? = if integration = [#enabled] then ""
              else "-outline"
@@ -970,7 +824,6 @@ search
 
 bind
   settings.truck-description := value
-
 ```
 
 Clicking on an integration opens up a page to enter credentials.
@@ -1000,7 +853,7 @@ bind @browser
     [#input #password type: "password" placeholder: "Password"]
     [#br]
     [#button #submit-credentials text: "Submit"]
-    [#button target: "TruckSettings" text: "Cancel"]
+    [#button target: "Truck Settings" text: "Cancel"]
   ]
 ```
 
@@ -1016,6 +869,147 @@ search @event @browser @session
 commit
   integration.credentials.username := username
   integration.credentials.password := password
+```
+
+### Styles
+Styling for the owner view pages.eee
+
+```css
+.owner-tools-pane {
+  padding: 10;
+}
+
+.owner-menu-header {
+  padding: 10px 20px;
+  background: #eee;
+}
+
+.owner-menu-text {
+  text-align: center;
+}
+
+.owner-menu-pane {
+  flex: 0 0 auto;
+  flex-direction: column;
+}
+
+.item-desc-price {
+  flex: 1;
+}
+
+.edit-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-item .item-top-bar {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  height: 140;
+  padding: 20;
+}
+
+.edit-item .item-top-bar > img {
+  border-radius: 6px;
+}
+
+.edit-item .item-name {
+  flex: 1;
+  padding: 0 20;
+  font-size: 1.5em;
+}
+
+.edit-item .submit-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding-top: 30;
+  padding-right: 20;
+}
+
+.edit-item .item-middle-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 0 20;
+}
+
+.edit-item .item-description {
+  height: 5em;
+  justify-content: flex-start !important;
+}
+
+.edit-item .item-price {
+  width: 5em;
+  justify-content: flex-start !important;
+  padding-left: 20;
+}
+
+.edit-item .item-price:before {
+  display: block;
+  content: "$";
+}
+
+.edit-item .item-bottom-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-top: 10;
+}
+
+.edit-item .item-delete-btn {
+  display: flex;
+  flex: 0 0 auto;
+  padding-right: 20;
+  padding-bottom: 30;
+}
+
+.cashier-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.cashier-order {
+  display: flex;
+  flex-direction: column;
+}
+
+.cashier-order header {
+  border-bottom: 1px solid #DDD;
+  box-shadow: 0 6px 6px -3px white;
+  z-index: 1;
+}
+
+.cashier-order h1 {
+  margin: 10;
+}
+
+.cashier-order .menu-btn {
+  align-self: flex-start;
+  padding: 20;
+  font-size: 2em;
+}
+
+.cashier-order .menu-items {
+  position: relative;
+  overflow-y: auto;
+}
+
+.cashier-order .cashier-bottom-bar {
+  flex: 1 0 65px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10 0;
+  border-top: 1px solid #DDD;
+  box-shadow: 0 -6px 6px -3px white;
+  z-index: 1;
+}
 ```
 
 ## Menu Item
@@ -1057,7 +1051,6 @@ search
 
 bind @browser
   item-text.children += [#div class:"item-flags" children:[#div #flagged sort: 2 dietary-flag]]
-
 ```
 
 ```
@@ -1069,8 +1062,6 @@ search @browser
 
 bind @browser
   flags.class += new-class
-
-
 ```
 
 ### Description
@@ -1125,7 +1116,7 @@ search @browser @event @session
   [#menu-item #buyable item]
   not([#click element:[#remove-item-btn]])
   count = if [#order-item order item count:c] then c + 1 else 1
-  
+
 commit
   order-item = [#order-item order item]
   order-item.count := count
@@ -1209,12 +1200,13 @@ Modifiable items may be clicked to access the edit-item page for that item.
 search @event @browser
   [#click element: [#menu-item #modifiable item]]
   [#click element: [class:"item-image"]]
+  window = [#app-window]
 
 search
   app = [#app]
 
-commit
-  app.page := "edit-item"
+commit @session @browser
+  window.target := "Edit Item"
   app.current-item := item
 ```
 
@@ -1222,12 +1214,13 @@ commit
 search @event @browser
   [#click element: [#menu-item #modifiable item]]
   [#click element: [class:"item-name"]]
+  window = [#app-window]
 
 search
   app = [#app]
 
 commit
-  app.page := "edit-item"
+  window.target := "Edit Item"
   app.current-item := item
 ```
 
@@ -1356,10 +1349,6 @@ Since the style differences for individual modes are so small, they've all been 
   color: #000000;
 }
 
-```
-
-
-```css
 .menu-item {
   display: flex;
   flex-direction: row;
@@ -1451,6 +1440,10 @@ Since the style differences for individual modes are so small, they've all been 
   background: rgba(255, 255, 255, 1);
   text-align: center;
 }
+
+.menu-item .ion-chevron-up {
+  margin-bottom: 10px;
+}
 ```
 
 ## Food Flags
@@ -1466,15 +1459,6 @@ commit
   [#food-flag flag: "spicy" name: "SPICY" icon: "ion-flame"]
 ```
 
-Ensure every item has a flags object.
-
-```
-search
-  item = [#menu not(flags)]
-
-commit
-  item.flags := []
-```
 
 Draw the food flags selector for an item
 
@@ -1486,7 +1470,7 @@ search @browser
 search
   flag-entry = [#food-flag flag name]
   icon = if flag-entry.icon then flag-entry.icon else ""
-  active? = if lookup[record: item.flags attribute: flag value: true] then true
+  active? = if item.dietary = flag then true
   else if toggleable? then false
   // If the food flags aren't toggleable, there's no reason to show inactive flags.
 
@@ -1506,7 +1490,6 @@ search
 
 commit
   item.dietary -= flag
-
 ```
 
 ```
@@ -1531,7 +1514,6 @@ bind @browser
 ### Styles
 
 ```css
-
 .food-flags {
   margin-left: 20;
 }
@@ -1547,70 +1529,32 @@ bind @browser
   display: flex;
   flex-direction: row;
 }
-
 ```
 
 
-### Navigation Buttons
 
-When a button with a target is clicked, set the window to that target.
 
-```
-search @event @browser
-  [#click element: [#button target]]
-  window = [#app-window]
-  
-commit @browser
-  window.target := target
-
-```
-
-There are some special cases when certain buttons are clicked
-
-```
-search
-  app = [#app]
-  item = [#menu name: "French Fries"]
-  
-commit
-  app.current-item := item
-```
-
-# Sample Food Truck
-
+## Sample Data
 ### Sample Truck Settings
 
 ```eve
-search 
+search
   orders = [#order]
 
 commit @browser
   [#app-window target: "Home"]
 
-commit 
+commit
   [#app order: orders, settings: [name: "Mama Rob's" hero-image: "http://i.imgur.com/1lcSHmQ.jpg"]]
 ```
 
 ### Sample Orders
 
-A sample user's order
-
-```
-search
-  [#app order]
-  item1 = [#menu name: "French Fries"]
-  item2 = [#menu name: "Bacon Swiss Burger"]
-    
-commit
-  [#order #my-order number: 8 status: "pending" items:
-    [#order-item order item: item1 count: 2]
-    [#order-item order item: item2 count: 1]]
-```
 
 Other orders
 
 ```eve
-search 
+search
   veggie = [#menu name:"Veggie Burger"]
   arnold = [#menu name:"Arnold Palmer"]
   burger = [#menu name:"Bacon Swiss Burger"]
@@ -1641,7 +1585,6 @@ commit
     [#order-item item:burger count:1]
     [#order-item item:arnold count:1]
     [#order-item item:fries count:1]]
-
 ```
 
 ### Sample Menu Items
@@ -1717,7 +1660,6 @@ commit
     cost:4.00
   menu-sort:9
     |dietary:("v", "gf")]
-
 ```
 
 Components
@@ -1758,10 +1700,10 @@ Copy records copy a source record's attribute (if it exists) onto a destination 
 ```eve
 search @components
   [#copy source destination attribute]
-  
+
 search @browser
   lookup[record: source, attribute, value]
-  
+
 bind @browser
   lookup[record: destination, attribute, value]
 ```
@@ -1792,14 +1734,13 @@ Row
 Column
 Spacer
 Styles
-```css
 
+```css
 .row { display: flex; flex-direction: row; }
 .row.spaced > * + * { margin-left: 10; }
 .column { display: flex; flex-direction: column; }
 .column.spaced > * + * { margin-top: 10; }
 .spacer { display: flex; flex: 1; }
-
 ```
 
 Window
@@ -1905,7 +1846,7 @@ If a window targets a nav button's target, that button is active.
 ```
 search @browser
   nav-button = [#nav-button target window: [#window target]]
-  
+
 bind @browser
   nav-button.class += "active"
   nav-button.disabled := true
@@ -1930,7 +1871,7 @@ A toggle button that is not checked is unchecked.
 search @browser
   toggle = [#button #toggle]
   checked = if toggle.checked then toggle.checked else false
-  
+
 bind @browser
   toggle.checked := checked
 ```
@@ -1942,7 +1883,7 @@ search @event @browser
   toggle = [#button #toggle]
   e = [#click element: toggle]
   checked = if toggle.checked = true then false else true
-  
+
 commit @browser
   toggle.checked := checked
 ```
@@ -1952,7 +1893,7 @@ Checked toggles are marked active.
 ```
 search @browser
   toggle = [#button #toggle checked: true]
-  
+
 bind @browser
   toggle.class += "active"
 ```
@@ -1961,9 +1902,8 @@ Styles
 Reset logic adapted from: https://codepen.io/terkel/pen/dvejH.
 
 ```css
-
   a.button { display: inline-block; overflow: hidden; outline: none; }
-  
+
 .button {
   box-sizing: border-box;
   overflow: visible;
@@ -2020,7 +1960,6 @@ Reset logic adapted from: https://codepen.io/terkel/pen/dvejH.
 .column > .button.pill + .button.pill { border-top-width: 0; }
 .column > .button.pill:first-child { border-top-left-radius: 6px; border-top-right-radius: 6px; }
 .column > .button.pill:last-child { border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; }
-
 ```
 
 Input
@@ -2042,7 +1981,7 @@ Create a form for each unique form id.
 ```
 search @browser
   [#input form]
-  
+
 bind @form
   [#form form data: []]
 ```
@@ -2050,17 +1989,16 @@ bind @form
 ```
 search @browser
   [#input form name value]
-  
+
 search @form
   [#form form data]
-  
+
 bind @form
   lookup[record: data, attribute: name, value]
 ```
 
 Styles
 ```css
-
 .input {
   padding: 0.5em 1em;
   background: transparent;
@@ -2102,7 +2040,7 @@ All input kinds are valid dropdown kinds
 ```
 search @components
   [#kind component: "input" kind]
-  
+
 bind @components
   [#kind component: "dropdown" kind]
 ```
@@ -2115,7 +2053,7 @@ search @browser
   dropdown = [#dropdown]
   icon = if dropdown.query != "" then "close-circled"
          else "arrow-down-b"
-  
+
 bind @browser
   dropdown += #column
   dropdown.children +=
@@ -2129,7 +2067,7 @@ If the dropdown has a placeholder or value, apply it to the input.
 ```
 search @browser
   input = [#dropdown-input dropdown]
-  
+
 bind @components
   [#copy source: dropdown destination: input attribute: ("placeholder" "value")]
 ```
@@ -2139,11 +2077,11 @@ If the dropdown has an input style applied to it, apply it to the #dropdown-base
 ```
 search @components
   [#kind component: "input" kind]
-  
+
 search @browser
   dropdown = [#dropdown tag: kind]
   dropdown-base = [#dropdown-base dropdown]
-  
+
 bind @browser
   dropdown-base.class += kind
 ```
@@ -2155,7 +2093,7 @@ search @browser
   dropdown = [#dropdown]
   open = if dropdown.open then dropdown.open
          else false
-  
+
 bind @browser
   dropdown.open := open
 ```
@@ -2167,7 +2105,7 @@ The current input value is the dropdown's query attribute. It can be used to dyn
 ```eve
 search @browser
   [#dropdown-input dropdown value]
-  
+
 bind @browser
   dropdown.query := value
 ```
@@ -2178,7 +2116,7 @@ Dropdowns embed their menu, hiding it if it is currently closed.
 ```
 search @browser
   dropdown = [#dropdown menu open]
-  
+
 bind @browser
   dropdown.children += menu
   menu.sort := 1
@@ -2206,8 +2144,8 @@ search @event @browser
   [#click]
   dropdown = [#dropdown open: true]
   not([#click element: dropdown])
-  
-commit @browser  
+
+commit @browser
   dropdown.open := none
 ```
 
@@ -2218,21 +2156,18 @@ search @event @browser
   [#click element: [#dropdown-button dropdown]]
   dropdown.query != ""
   input = [#dropdown-input dropdown]
-  
+
 bind @browser
   input.value := ""
-
 ```
 
 Styles
 ```css
-
-  .dropdown { position: relative; }
+.dropdown { position: relative; }
 .dropdown .dropdown-base { padding: 0; }
 
 .dropdown .dropdown-menu:not(.open) { display: none; }
 .dropdown .dropdown-menu { position: absolute; top: 100%; left: 0; right: 0; margin-top: -4px; background: white; border: 1px solid #DDD; border-radius: 6px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); z-index: 10; }
-  
 ```
 
 Modal
@@ -2248,7 +2183,7 @@ A modal contains a shade and a window.
 ```
 search @browser
   modal = [#modal]
-  
+
 bind @browser
   modal <- [#column children:
     [#div #modal-shade class: "modal-shade" modal]
@@ -2262,7 +2197,7 @@ search @browser
   content = [#modal-window modal]
   open = if content.children then true
          else false
-  
+
 bind @browser
   modal.class += [open]
 ```
@@ -2274,7 +2209,7 @@ Clicking a modal shade directly dismisses it.
 search @event @browser
   [#click #direct-target element: [#modal-shade modal]]
   window = [#modal-window modal target]
-  
+
 commit @browser
   window.target := none
 ```
@@ -2283,12 +2218,11 @@ Styles
 ```css
 .modal { display: none; position: absolute; top: 0; right: 0; bottom: 0; left: 0; align-items: center; justify-content: center; z-index: 20; }
 .modal.open { display: flex; }
-.modal .modal-shade { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0, 0, 0, 0.2); -webkit-backdrop-filter: blur(2px); } 
+.modal .modal-shade { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0, 0, 0, 0.2); -webkit-backdrop-filter: blur(2px); }
 
 .modal.flat .modal-content { z-index: 21; padding: 1em 2em; background: white; }
 
 .modal.bubbly .modal-content { z-index: 21; padding: 1em 2em; background: white; border-radius: 6px; box-shadow: 0 3px 1px rgba(0, 0, 0, 0.2); }
-
 ```
 
 ### Handle Twitter login
@@ -2332,7 +2266,7 @@ commit
   app.page := "settings"
 ```
 
-## Editable
+## Editable Divs
 
 Every `#editable` is also a `#div`
 
